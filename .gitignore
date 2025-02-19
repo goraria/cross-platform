@@ -5,3 +5,7 @@
 /client/.env
 /mobile/.env
 /server/.env
+
+/client/.DS_Store
+/mobile/.DS_Store
+/server/.DS_Store

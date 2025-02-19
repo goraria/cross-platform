@@ -1,0 +1,28 @@
+Initialize {
+
+}
+
+Base {
+    language: JavaScript,
+    database: MongoDB,
+    environment: Node.js,
+}
+
+Technologies {
+    client: [React, Redux, Material-UI, Axios]
+    mobile: [React Native, Redux, Axios]
+    server: [Node.js, Express, MongoDB, Mongoose, JWT, Nodemailer]
+}
+
+Features {
+    client: [Login, Register, Profile, Home, Product, Cart, Order, Payment, Rating, Toast]
+    mobile: [Login, Register, Profile, Home, Product, Cart, Order, Payment, Rating, Toast]
+    server: [Login, Register, Profile, Home, Product, Cart, Order, Payment, Rating, Toast]
+}
+
+Routes {
+    client: [Authentication, Home, User, Account]
+    mobile: [Authentication, Home, User, Account]
+    server: [Authentication, Home, User, Account]
+}
+
