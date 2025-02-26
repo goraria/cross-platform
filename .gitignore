@@ -17,3 +17,8 @@
 /client/.DS_Store
 /mobile/.DS_Store
 /server/.DS_Store
+
+.idea
+/client/.idea
+/mobile/.idea
+/server/.idea
