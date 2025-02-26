@@ -2,23 +2,28 @@
 /client/node_modules
 /mobile/node_modules
 /server/node_modules
+/template/node_modules
 
 /.idea
 /client/.idea
 /mobile/.idea
 /server/.idea
+/template/.idea
+
+/.vscode
+/client/.vscode
+/mobile/.vscode
+/server/.vscode
+/template/.vscode
 
 .env
 /client/.env
 /mobile/.env
 /server/.env
+/template/.env
 
 .DS_Store
 /client/.DS_Store
 /mobile/.DS_Store
 /server/.DS_Store
-
-.idea
-/client/.idea
-/mobile/.idea
-/server/.idea
+/template/.DS_Store
