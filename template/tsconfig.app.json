@@ -20,15 +20,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true,
-
-
-    "types": ["vite/template"],
-
-    "paths": {
-      // "@/*": ["./src/*"],
-      "@/*": ["src/*"]
-    },
+    "noUncheckedSideEffectImports": true
   },
   "include": ["src"]
 }

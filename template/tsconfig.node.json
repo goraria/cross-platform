@@ -19,6 +19,14 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
+
+
+    "types": ["vite/template"],
+
+    "paths": {
+      // "@/*": ["./src/*"],
+      "@/*": ["src/*"]
+    },
   },
   "include": ["vite.config.ts"]
 }
