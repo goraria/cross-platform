@@ -4,7 +4,7 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import helmet from "helmet";
 import morgan from "morgan";
-import * as mongoose from "mongoose";
+import mongoose from "mongoose";
 /* ROUTE IMPORTS */
 
 
@@ -26,6 +26,22 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors());
 
+/* MONGOOSE */
+
+const port = process.env.PORT || 8080;
+
+// @ts-ignore
+mongoose.connect(process.env.MONGODB_URI,
+    { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true })
+    .then(() => {
+        app.listen(port, () => {
+            console.log(`Server is running on http://localhost:${port}`);
+        });
+    })
+    .catch(err => {
+        console.log(err);
+    });
+
 /* ROUTES */
 
 app.get('/', (req, res) => {
@@ -34,10 +50,10 @@ app.get('/', (req, res) => {
 
 /* SERVER */
 
-const port = process.env.PORT || 5000;
-
-if (!isProduction) {
-    app.listen(port, () => {
-        console.log(`Server is running on http://localhost:${port}`);
-    });
-}
+// const port = process.env.PORT || 5000;
+//
+// if (!isProduction) {
+//     app.listen(port, () => {
+//         console.log(`Server is running on http://localhost:${port}`);
+//     });
+// }
