@@ -1,11 +1,19 @@
+/node_modules
 /client/node_modules
 /mobile/node_modules
 /server/node_modules
 
+/.idea
+/client/.idea
+/mobile/.idea
+/server/.idea
+
+.env
 /client/.env
 /mobile/.env
 /server/.env
 
+.DS_Store
 /client/.DS_Store
 /mobile/.DS_Store
 /server/.DS_Store

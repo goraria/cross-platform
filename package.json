@@ -1,0 +1,17 @@
+{
+  "name": "cross-platform",
+  "version": "1.0.0",
+  "keywords": [
+    "React",
+    "React Native",
+    "Vite",
+    "Expo",
+    "Node.js",
+    "Express",
+    "MongoDB",
+    "Electron"
+  ],
+  "author": "Truong Giang Pham",
+  "license": "GORTH",
+  "description": ""
+}
