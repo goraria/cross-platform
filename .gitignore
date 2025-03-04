@@ -6,6 +6,7 @@
 #/template/node_modules
 #/default/node_modules
 
+/.idea/
 **/.idea
 #/default/.idea
 #/mobile/.idea
@@ -34,8 +35,9 @@ server/.env
 #/template/.env
 #/default/.env
 
-**/.next
-**/.expo
+/client/.next
+/default/.next
+/mobile/.expo
 
 **/expo-env.d.ts
 
