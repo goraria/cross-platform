@@ -42,6 +42,7 @@ server/.env
 **/expo-env.d.ts
 
 Thumbs.db
+.DS_Store
 **/.DS_Store
 
 #/client/.DS_Store
