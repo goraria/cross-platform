@@ -6,9 +6,13 @@
     "React Native",
     "Vite",
     "Expo",
+    "Next.js",
     "Node.js",
     "Express",
     "MongoDB",
+    "MySQL",
+    "DynamoDB",
+    "PostgreSQL",
     "Electron"
   ],
   "author": "Truong Giang Pham",

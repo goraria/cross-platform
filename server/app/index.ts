@@ -9,6 +9,7 @@ import mongoose from "mongoose";
 /* ROUTE IMPORTS */
 import authRoutes from "@/routes/authRoutes";
 import productRoutes from "@/routes/productRoutes";
+import userRoutes from "@/routes/userRoutes";
 
 /* CONFIGURATIONS */
 dotenv.config();
@@ -35,6 +36,7 @@ app.use(cors());
 // });
 app.use("/auth", authRoutes)
 app.use("/products", productRoutes)
+app.use("/users", userRoutes)
 
 /* MONGOOSE */
 
