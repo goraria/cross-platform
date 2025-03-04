@@ -30,23 +30,27 @@ app.use(cors());
 
 const port = process.env.PORT || 8080;
 
+app.listen(port, () => {
+    console.log(`Server is running on http://localhost:${port}`);
+});
+
 // @ts-ignore
-mongoose.connect(process.env.MONGODB_URI,
-    { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true })
-    .then(() => {
-        app.listen(port, () => {
-            console.log(`Server is running on http://localhost:${port}`);
-        });
-    })
-    .catch(err => {
-        console.log(err);
-    });
+// mongoose.connect(process.env.MONGODB_URI,
+//     { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true })
+//     .then(() => {
+//         app.listen(port, () => {
+//             console.log(`Server is running on http://localhost:${port}`);
+//         });
+//     })
+//     .catch(err => {
+//         console.log(err);
+//     });
 
 /* ROUTES */
 
-app.get('/', (req, res) => {
-    res.send('Hello World!');
-});
+// app.get('/', (req, res) => {
+//     res.send('Hello World!');
+// });
 
 /* SERVER */
 

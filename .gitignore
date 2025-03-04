@@ -2,6 +2,7 @@
 #/default/node_modules
 #/mobile/node_modules
 #/server/node_modules
+#/process/node_modules
 #/template/node_modules
 #/default/node_modules
 
@@ -9,6 +10,7 @@
 #/default/.idea
 #/mobile/.idea
 #/server/.idea
+#/process/.idea
 #/template/.idea
 #/default/.idea
 
@@ -16,27 +18,33 @@
 #/default/.vscode
 #/mobile/.vscode
 #/server/.vscode
+#/process/.vscode
 #/template/.vscode
 #/default/.vscode
 
 **/.env
 client/.env.local
-client/.env.development
+client/.env.development 
 client/.env.production
 server/.env
 #/client/.env
 #/mobile/.env
 #/server/.env
+#/process/.env
 #/template/.env
 #/default/.env
 
 **/.next
+**/.expo
+
+**/expo-env.d.ts
 
 Thumbs.db
 **/.DS_Store
 
-#/default/.DS_Store
+#/client/.DS_Store
 #/mobile/.DS_Store
 #/server/.DS_Store
+#/process/.DS_Store
 #/template/.DS_Store
 #/default/.DS_Store
