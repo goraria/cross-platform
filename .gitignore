@@ -1,20 +1,23 @@
 **/node_modules
-#/client/node_modules
+#/default/node_modules
 #/mobile/node_modules
 #/server/node_modules
 #/template/node_modules
+#/default/node_modules
 
 **/.idea
-#/client/.idea
+#/default/.idea
 #/mobile/.idea
 #/server/.idea
 #/template/.idea
+#/default/.idea
 
 **/.vscode
-#/client/.vscode
+#/default/.vscode
 #/mobile/.vscode
 #/server/.vscode
 #/template/.vscode
+#/default/.vscode
 
 **/.env
 client/.env.local
@@ -25,13 +28,15 @@ server/.env
 #/mobile/.env
 #/server/.env
 #/template/.env
+#/default/.env
 
-client/.next
+**/.next
 
 Thumbs.db
 **/.DS_Store
 
-#/client/.DS_Store
+#/default/.DS_Store
 #/mobile/.DS_Store
 #/server/.DS_Store
 #/template/.DS_Store
+#/default/.DS_Store
