@@ -38,7 +38,7 @@ server/.env
 /client/.next
 /default/.next
 /mobile/.expo
-
+/mobile/expo-env.d.ts
 **/expo-env.d.ts
 
 Thumbs.db
