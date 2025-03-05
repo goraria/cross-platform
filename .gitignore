@@ -37,6 +37,7 @@ server/.env
 
 /client/.next
 /default/.next
+/server/dist
 /mobile/.expo
 /mobile/expo-env.d.ts
 **/expo-env.d.ts
