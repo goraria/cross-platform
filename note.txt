@@ -21,8 +21,8 @@ Features {
 }
 
 Routes {
-    client: [Authentication, Home, User, Account]
-    mobile: [Authentication, Home, User, Account]
-    server: [Authentication, Home, User, Account]
+    client: [Authentication, Home, UserModel, Account]
+    mobile: [Authentication, Home, UserModel, Account]
+    server: [Authentication, Home, UserModel, Account]
 }
 

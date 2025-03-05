@@ -20,7 +20,8 @@ export const register: RequestHandler = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-
+        const { email, password } = req.body;
+        console.log(email, password);
         res.status(201).json({ message: "Registered successfully" });
     } catch (error) {
         next(error);

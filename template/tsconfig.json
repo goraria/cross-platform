@@ -8,9 +8,7 @@
     "strict": true,
     "baseUrl": "src/",
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     },
     "types": ["vite/template"],
   },
