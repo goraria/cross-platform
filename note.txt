@@ -26,3 +26,24 @@ Routes {
     server: [Authentication, Home, UserModel, Account]
 }
 
+Environment {
+    client: .env.local {
+        REACT_APP_API: http://localhost:5000/apiNEXT_PUBLIC_API_BASE_URL=http://localhost:3003
+    }
+    server: .env {
+        PORT=3003
+        # 8080
+        NODE_ENV=development
+        MONGO_URL="mongodb+srv://goraria:990820@sandbox.6jc7m.mongodb.net/"
+        MONGODB_URI="mongodb+srv://goraria:990820@sandbox.6jc7m.mongodb.net/"
+    }
+    template:
+        .env {
+            REACY_APP_PUBLIC_API_BASE_URL=http://localhost:3000/api
+            JWT_SECRET=GORTH
+        }
+        .env.local {
+            VITE_PUBLIC_API_BASE_URL="http://localhost:8080"
+        }
+}
+

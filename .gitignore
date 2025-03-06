@@ -27,6 +27,9 @@
 client/.env.local
 client/.env.development 
 client/.env.production
+template/.env.local
+template/.env.development
+template/.env.production
 server/.env
 #/client/.env
 #/mobile/.env
