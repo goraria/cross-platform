@@ -1,4 +1,7 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import User from "../models/userModel";
 
 export const login: RequestHandler = async (
     req: Request,
@@ -6,11 +9,18 @@ export const login: RequestHandler = async (
     next: NextFunction
 ): Promise<void> => {
     try {
+        const { email, password } = req.body;
+        const user: any = await User.findOne({ email: email });
+        // if (!user) return res.status(400).json({ msg: "User does not exist. " });
 
-        res.status(200).json({ message: "Logged in successfully" });
-    } catch (error) {
+        const isMatch = await bcrypt.compare(password, user.password);
+        // if (!isMatch) return res.status(400).json({ msg: "Invalid credentials. " });
 
-        next(error);
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!);
+        delete user.password;
+        res.status(200).json({ token, user });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
     }
 };
 
@@ -20,10 +30,35 @@ export const register: RequestHandler = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        const { email, password } = req.body;
-        console.log(email, password);
-        res.status(201).json({ message: "Registered successfully" });
-    } catch (error) {
-        next(error);
+        const {
+            firstName,
+            lastName,
+            email,
+            password,
+            picturePath,
+            friends,
+            location,
+            occupation,
+        } = req.body;
+
+        const salt = await bcrypt.genSalt();
+        const passwordHash = await bcrypt.hash(password, salt);
+
+        const newUser = new User({
+            firstName,
+            lastName,
+            email,
+            password: passwordHash,
+            picturePath,
+            friends,
+            location,
+            occupation,
+            viewedProfile: Math.floor(Math.random() * 10000),
+            impressions: Math.floor(Math.random() * 10000),
+        });
+        const savedUser = await newUser.save();
+        res.status(201).json(savedUser);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
     }
 };

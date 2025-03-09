@@ -4,7 +4,10 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import helmet from "helmet";
 import morgan from "morgan";
+import multer from "multer";
+import path from "path";
 import mongoose from "mongoose";
+import { fileURLToPath } from "node:url";
 
 /* ROUTE IMPORTS */
 import authRoutes from "../routes/authRoutes";
@@ -22,6 +25,25 @@ app.use(morgan("common"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors());
+
+/* STATIC FILES */
+/* UPLOAD MULTER CONFIG */
+const __filename = fileURLToPath(process.env.url!);
+// const __dirname = path.resolve();
+const __dirname = path.dirname(__filename);
+app.use("/assets", express.static(path.join(__dirname, "public/assets")));
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "public/assets");
+    },
+    filename: (req, file, cb) => {
+        // cb(null, req.body.name);
+        cb(null, file.originalname);
+    },
+});
+
+const upload = multer({ storage });
 
 // const isProduction = process.env.NODE_ENV === 'production';
 //
@@ -50,17 +72,16 @@ mongoose.connect(process.env.MONGODB_URI!, {
 
 }).then(() => {
     app.listen(port, () => {
-        console.log(`Server is running on http://localhost:${port}`);
+        console.log(`Server is running on: http://localhost:${port}`);
     });
 }).catch(err => {
-    console.log(err);
+    console.log(`Server did not connect: ${err}`);
 });
 
 // mongoose.connect(process.env.MONGODB_URI!, {
 //     useNewUrlParser: true,
 //     useUnifiedTopology: true,
 //     useCreateIndex: true
-//
 // }).then(() => {
 //     app.listen(port, () => {
 //         console.log(`Server is running on http://localhost:${port}`);
