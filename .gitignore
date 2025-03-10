@@ -23,7 +23,9 @@
 #/template/.vscode
 #/default/.vscode
 
+.env*
 **/.env
+**/.env*
 client/.env.local
 client/.env.development 
 client/.env.production
@@ -39,11 +41,17 @@ server/.env
 #/default/.env
 
 /client/.next
+/client/.vercel
 /default/.next
+/default/.vercel
 /server/dist
 /mobile/.expo
 /mobile/expo-env.d.ts
 **/expo-env.d.ts
+/client/next-env.d.ts
+/default/next-env.d.ts
+**/next-env.d.ts
+*.tsbuildinfo
 
 Thumbs.db
 .DS_Store
@@ -55,3 +63,14 @@ Thumbs.db
 #/process/.DS_Store
 #/template/.DS_Store
 #/default/.DS_Store
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
