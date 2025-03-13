@@ -8,7 +8,7 @@ export const verifyToken: RequestHandler = async (
     req: Request,
     res: Response,
     next: NextFunction
-): Promise<void> => {
+): Promise<any> => {
     try {
         let token = req.header("Authorization");
 
@@ -20,10 +20,13 @@ export const verifyToken: RequestHandler = async (
             token = token.slice(7, token.length).trimLeft();
         }
 
-        const verified = jwt.verify(token, process.env.JWT_SECRET!);
-        req.user = verified;
+        // const verified = jwt.verify(token, process.env.JWT_SECRET!);
+        // req.user = verified;
+        // @ts-ignore
+        req.user = jwt.verify(token, process.env.JWT_SECRET!);
+
         next();
-    } catch (err) {
+    } catch (err: any) {
         res.status(500).json({ error: err.message });
     }
 };
