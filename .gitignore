@@ -56,6 +56,8 @@ server/.env
 Thumbs.db
 .DS_Store
 **/.DS_Store
+**/package-lock.json
+**/yarn.lock
 
 #/client/.DS_Store
 #/mobile/.DS_Store
