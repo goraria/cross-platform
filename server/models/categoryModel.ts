@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const CommentSchema = new mongoose.Schema(
+const CategorySchema = new mongoose.Schema(
     {
         userId: {
             type: String,
@@ -30,6 +30,6 @@ const CommentSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-const Comment = mongoose.model("Comment", CommentSchema);
+const Category = mongoose.model("Category", CategorySchema);
 
-export default Comment;
+export default Category;
