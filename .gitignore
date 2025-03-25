@@ -59,13 +59,6 @@ Thumbs.db
 **/package-lock.json
 **/yarn.lock
 
-#/client/.DS_Store
-#/mobile/.DS_Store
-#/server/.DS_Store
-#/process/.DS_Store
-#/template/.DS_Store
-#/default/.DS_Store
-
 # dependencies
 /node_modules
 /.pnp

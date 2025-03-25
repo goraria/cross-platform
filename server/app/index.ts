@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import dotenv from 'dotenv';
 import bodyParser from 'body-parser';
 import cors from 'cors';
@@ -12,6 +12,8 @@ import { fileURLToPath } from "node:url";
 /* ROUTE IMPORTS */
 import authRoutes from "../routes/authRoutes";
 import productRoutes from "../routes/productRoutes";
+import postRoutes from "../routes/postRoutes";
+import taskRoutes from "../routes/taskRoutes";
 import userRoutes from "../routes/userRoutes";
 
 /* CONFIGURATIONS */
@@ -31,13 +33,21 @@ app.use(cors());
 const __filename = fileURLToPath(process.env.url!);
 // const __dirname = path.resolve();
 const __dirname = path.dirname(__filename);
-app.use("/assets", express.static(path.join(__dirname, "public/assets")));
+app.use("/assets", express.static(path.join(__dirname, "assets")));
 
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, "public/assets");
+    destination: (
+        req,
+        file,
+        cb
+    ): void => {
+        cb(null, "assets");
     },
-    filename: (req, file, cb) => {
+    filename: (
+        req,
+        file,
+        cb
+    ): void => {
         // cb(null, req.body.name);
         cb(null, file.originalname);
     },
@@ -54,6 +64,8 @@ const upload = multer({ storage });
 /* ROUTES */
 app.use("/auth", authRoutes)
 app.use("/products", productRoutes)
+app.use("/task", taskRoutes)
+app.use("/post", postRoutes)
 app.use("/users", userRoutes)
 
 // app.get('/', (req, res) => {
@@ -74,8 +86,8 @@ mongoose.connect(process.env.MONGODB_URI!, {
     app.listen(port, () => {
         console.log(`Server is running on: http://localhost:${port}`);
     });
-}).catch(err => {
-    console.log(`Server did not connect: ${err}`);
+}).catch((error: any) => {
+    console.log(`Server did not connect: ${error}`);
 });
 
 // mongoose.connect(process.env.MONGODB_URI!, {

@@ -8,7 +8,8 @@
     "dev": "nodemon app/index",
     "pack": "npm run build && concurrently \"npx tsc -w\" \"nodemon --exec ts-node app/index.ts\"",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "load": "nodemon --exec \"ts-node --loader ts-node/esm\" app/index.ts\n"
+    "load": "nodemon --exec \"node --loader ts-node/esm\" app/index.ts\n",
+    "esm": "npm run build && concurrently \"npx tsc -w\" \"nodemon --exec \"node --loader ts-node/esm\" app/index.ts\""
   },
   "keywords": [],
   "author": "Truong Giang Pham",
