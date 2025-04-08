@@ -1,7 +1,7 @@
-import Product from "../models/productModel";
-// import ProductStat from "../models/ProductStat.js";
-import User from "../models/userModel";
-import Transaction from "../models/transactionModel";
+import Product from "@models/productModel";
+// import ProductStat from "@models/ProductStat.js";
+import User from "@models/userModel";
+import Transaction from "@models/transactionModel";
 import { NextFunction, Request, Response } from "express";
 
 export const getProducts = async (
