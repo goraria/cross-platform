@@ -1,22 +1,32 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "main": "app/index.ts",
+  "keywords": [],
+  "author": "Truong Giang Pham",
+  "license": "GORTH",
+  "description": "",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "main": "dist/app/index.js",
   "scripts": {
-    "build": "rimraf dist && npx tsc",
-    "start": "npm run build && node dist/app/index.js",
-    "dev": "nodemon app/index.ts",
+    "clean": "rimraf build",
+    "build": "npm run clean && tsc",
+    "start": "node dist/app/index.js",
+    "dev": "nodemon",
+    "lint": "eslint . --ext .ts",
+    "builds": "rimraf dist && npx tsc",
+    "starts": "npm run build && node dist/app/index.js",
+    "devs": "nodemon app/index.ts",
     "pack": "npm run build && concurrently \"npx tsc -w\" \"nodemon --exec ts-node app/index.ts\"",
     "test": "echo \"Error: no test specified\" && exit 1",
     "load": "nodemon --exec \"node --loader ts-node/esm\" app/index.ts\n",
     "esm": "npm run build && concurrently \"npx tsc -w\" \"nodemon --exec \"node --loader ts-node/esm\" app/index.ts\""
   },
-  "keywords": [],
-  "author": "Truong Giang Pham",
-  "license": "GORTH",
-  "description": "",
   "dependencies": {
-    "@clerk/express": "^1.4.0",
+    "@clerk/express": "^1.4.1",
     "@prisma/client": "^6.5.0",
     "bcryptjs": "^3.0.2",
     "body-parser": "^2.2.0",
@@ -52,5 +62,15 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3"
+  },
+  "_moduleAliases": {
+    "@app": "dist/app",
+    "@config": "dist/config",
+    "@controllers": "dist/controllers",
+    "@middlewares": "dist/middlewares",
+    "@models": "dist/models",
+    "@routes": "dist/routes",
+    "@utils": "dist/utils",
+    "@types": "dist/types"
   }
 }

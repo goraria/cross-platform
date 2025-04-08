@@ -1,3 +1,5 @@
+// import 'module-alias/register';
+
 import express, { NextFunction, Request, Response } from 'express';
 import dotenv from 'dotenv';
 import bodyParser from 'body-parser';
@@ -10,11 +12,11 @@ import mongoose from "mongoose";
 import { fileURLToPath } from "node:url";
 
 /* ROUTE IMPORTS */
-import authRoutes from "../routes/authRoutes";
-import productRoutes from "../routes/productRoutes";
-import postRoutes from "../routes/postRoutes";
-import taskRoutes from "../routes/taskRoutes";
-import userRoutes from "../routes/userRoutes";
+import authRoutes from "@routes/authRoutes";
+import productRoutes from "@routes/productRoutes";
+import postRoutes from "@routes/postRoutes";
+import taskRoutes from "@routes/taskRoutes";
+import userRoutes from "@routes/userRoutes";
 
 /* CONFIGURATIONS */
 dotenv.config();
@@ -30,30 +32,30 @@ app.use(cors());
 
 /* STATIC FILES */
 /* UPLOAD MULTER CONFIG */
-const __filename = fileURLToPath(process.env.url!);
-// const __dirname = path.resolve();
-const __dirname = path.dirname(__filename);
-app.use("/assets", express.static(path.join(__dirname, "assets")));
-
-const storage = multer.diskStorage({
-    destination: (
-        req,
-        file,
-        cb
-    ): void => {
-        cb(null, "assets");
-    },
-    filename: (
-        req,
-        file,
-        cb
-    ): void => {
-        // cb(null, req.body.name);
-        cb(null, file.originalname);
-    },
-});
-
-const upload = multer({ storage });
+// const __filename = fileURLToPath(process.env.url!);
+// // const __dirname = path.resolve();
+// const __dirname = path.dirname(__filename);
+// app.use("/assets", express.static(path.join(__dirname, "assets")));
+//
+// const storage = multer.diskStorage({
+//     destination: (
+//         req,
+//         file,
+//         cb
+//     ): void => {
+//         cb(null, "assets");
+//     },
+//     filename: (
+//         req,
+//         file,
+//         cb
+//     ): void => {
+//         // cb(null, req.body.name);
+//         cb(null, file.originalname);
+//     },
+// });
+//
+// const upload = multer({ storage });
 
 // const isProduction = process.env.NODE_ENV === 'production';
 //

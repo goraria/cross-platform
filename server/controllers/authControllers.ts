@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import User from "../models/userModel";
+import User from "@models/userModel";
 
 export const login: RequestHandler = async (
     req: Request,

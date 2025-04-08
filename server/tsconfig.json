@@ -11,10 +11,13 @@
     // "disableReferencedProjectLoad": true,             /* Reduce the number of projects loaded automatically by TypeScript. */
 
     /* Language and Environment */
-    "target": "ES2020",                                  /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
+    "target": "ES2022",                                  /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
+    "lib": ["ES2022", "DOM"],                            /* Specify a set of bundled library declaration files that describe the target runtime environment. */
     // "lib": [],                                        /* Specify a set of bundled library declaration files that describe the target runtime environment. */
     // "jsx": "preserve",                                /* Specify what JSX code is generated. */
+    "experimentalDecorators": true,                   /* Enable experimental support for legacy experimental decorators. */
     // "experimentalDecorators": true,                   /* Enable experimental support for legacy experimental decorators. */
+    "emitDecoratorMetadata": true,                    /* Emit design-type metadata for decorated declarations in source files. */
     // "emitDecoratorMetadata": true,                    /* Emit design-type metadata for decorated declarations in source files. */
     // "jsxFactory": "",                                 /* Specify the JSX factory function used when targeting React JSX emit, e.g. 'React.createElement' or 'h'. */
     // "jsxFragmentFactory": "",                         /* Specify the JSX Fragment reference used for fragments when targeting React JSX emit e.g. 'React.Fragment' or 'Fragment'. */
@@ -25,17 +28,26 @@
     // "moduleDetection": "auto",                        /* Control what method is used to detect module-format JS files. */
 
     /* Modules */
-    // "module": "commonjs",                             /* Specify what module code is generated. */
-    "module": "NodeNext",                                /* Specify what module code is generated. */
+    "module": "CommonJS",                                /* Specify what module code is generated. */
+    // "module": "NodeNext",                             /* Specify what module code is generated. */
+    "rootDir": ".",                                      /* Specify the root folder within your source files. */
     // "rootDir": "./",                                  /* Specify the root folder within your source files. */
-    "moduleResolution": "NodeNext",                      /* Specify how TypeScript looks up a file from a given module specifier. */
-    // "moduleResolution": "node",                       /* Specify how TypeScript looks up a file from a given module specifier. */
+    // "moduleResolution": "NodeNext",                   /* Specify how TypeScript looks up a file from a given module specifier. */
+    "moduleResolution": "node",                          /* Specify how TypeScript looks up a file from a given module specifier. */
     // "moduleResolution": "node10",                     /* Specify how TypeScript looks up a file from a given module specifier. */
     // "baseUrl": "./",                                  /* Specify the base directory to resolve non-relative module names. */
-    /* "baseUrl": "./",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
-    }, */                                      /* Specify a set of entries that re-map imports to additional lookup locations. */
+      // "@/*": ["./*"]
+      "@app/*": ["app/*"],
+      "@config/*": ["config/*"],
+      "@controllers/*": ["controllers/*"],
+      "@middlewares/*": ["middlewares/*"],
+      "@models/*": ["models/*"],
+      "@routes/*": ["routes/*"],
+      "@utils/*": ["utils/*"],
+      "@types/*": ["types/*"]
+    },                                                   /* Specify a set of entries that re-map imports to additional lookup locations. */
     // "paths": {},                                      /* Specify a set of entries that re-map imports to additional lookup locations. */
     // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
     // "typeRoots": [],                                  /* Specify multiple folders that act like './node_modules/@types'. */
@@ -63,6 +75,7 @@
     // "declaration": true,                              /* Generate .d.ts files from TypeScript and JavaScript files in your project. */
     // "declarationMap": true,                           /* Create sourcemaps for d.ts files. */
     // "emitDeclarationOnly": true,                      /* Only output d.ts files and not JavaScript files. */
+    "sourceMap": true,                                /* Create source map files for emitted JavaScript files. */
     // "sourceMap": true,                                /* Create source map files for emitted JavaScript files. */
     // "inlineSourceMap": true,                          /* Include sourcemap files inside the emitted JavaScript. */
     // "noEmit": true,                                   /* Disable emitting files from a compilation. */
@@ -119,5 +132,13 @@
     "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
   },
   // "include": ["src/**/*", "**/*.ts", "data/**/*.json", "prisma/**/*"],
-  "include": ["**/*", "data/**/*.json"],
+  "include": [
+    "**/*.ts", // Bao gồm tất cả các file .ts trong project
+    "data/**/*.json"
+  ],
+  "exclude": [
+    "node_modules", // Loại trừ thư mục node_modules
+    "dist" // Loại trừ thư mục build
+    // Thêm các thư mục/file khác bạn muốn loại trừ
+  ]
 }

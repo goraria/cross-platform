@@ -1,6 +1,6 @@
-import User from "../models/userModel";
-// import OverallStat from "../models/OverallStat.js";
-import Transaction from "../models/transactionModel";
+import User from "@models/userModel";
+// import OverallStat from "@models/OverallStat.js";
+import Transaction from "@models/transactionModel";
 import { NextFunction, Request, Response } from "express";
 
 export const getUser = async (

@@ -1,6 +1,6 @@
 import express from "express";
-import { getFeedPosts, getUserPosts, likePost } from "../controllers/postControllers";
-import { verifyToken } from "../middleware/authMiddleware";
+import { getFeedPosts, getUserPosts, likePost } from "@controllers/postControllers";
+import { verifyToken } from "@middlewares/authMiddleware";
 
 const router = express.Router();
 
