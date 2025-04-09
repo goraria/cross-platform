@@ -131,7 +131,7 @@
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
     "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
   },
-  // "include": ["src/**/*", "**/*.ts", "data/**/*.json", "prisma/**/*"],
+  // "include": ["app/**/*", "**/*.ts", "data/**/*.json", "prisma/**/*"],
   "include": [
     "**/*.ts", // Bao gồm tất cả các file .ts trong project
     "data/**/*.json"

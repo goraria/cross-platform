@@ -37,7 +37,7 @@ Environment {
         MONGO_URL="mongodb+srv://goraria:990820@sandbox.6jc7m.mongodb.net/"
         MONGODB_URI="mongodb+srv://goraria:990820@sandbox.6jc7m.mongodb.net/"
     }
-    template:
+    template: {
         .env {
             REACY_APP_PUBLIC_API_BASE_URL=http://localhost:3000/api
             JWT_SECRET=GORTH
@@ -45,5 +45,35 @@ Environment {
         .env.local {
             VITE_PUBLIC_API_BASE_URL="http://localhost:8080"
         }
+    }
+}
+
+Config {
+    client: {
+        package.json {
+            "proxy": "http://localhost:5000"
+        }
+        tailwind.config.js {
+            content: [
+                "./src/**/*.{js,jsx,ts,tsx}",
+                "./public/index.html",
+            ],
+            theme: {
+                extend: {},
+            },
+            plugins: [],
+        }
+    }
+    server: {
+        package.json {
+            "proxy": "http://localhost:3003"
+        }
+        nodemon.json {
+            "watch": ["."],
+            "ext": "ts,json",
+            "ignore": ["node_modules", "build", "dist", ".git", "src"],
+            "exec": "ts-node -r tsconfig-paths/register app/index.ts"
+        }
+    }
 }
 

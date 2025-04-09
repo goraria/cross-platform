@@ -18,6 +18,8 @@ import postRoutes from "@routes/postRoutes";
 import taskRoutes from "@routes/taskRoutes";
 import userRoutes from "@routes/userRoutes";
 
+import { connectDB } from "@config/database";
+
 /* CONFIGURATIONS */
 dotenv.config();
 
@@ -35,30 +37,30 @@ app.use(cors());
 // const __filename = fileURLToPath(process.env.url!);
 // // const __dirname = path.resolve();
 // const __dirname = path.dirname(__filename);
-// app.use("/assets", express.static(path.join(__dirname, "assets")));
-//
-// const storage = multer.diskStorage({
-//     destination: (
-//         req,
-//         file,
-//         cb
-//     ): void => {
-//         cb(null, "assets");
-//     },
-//     filename: (
-//         req,
-//         file,
-//         cb
-//     ): void => {
-//         // cb(null, req.body.name);
-//         cb(null, file.originalname);
-//     },
-// });
-//
-// const upload = multer({ storage });
+app.use("/assets", express.static(path.join(__dirname, "assets")));
 
-// const isProduction = process.env.NODE_ENV === 'production';
-//
+const storage = multer.diskStorage({
+    destination: (
+        req,
+        file,
+        cb
+    ): void => {
+        cb(null, "assets");
+    },
+    filename: (
+        req,
+        file,
+        cb
+    ): void => {
+        // cb(null, req.body.name);
+        cb(null, file.originalname);
+    },
+});
+
+const upload = multer({ storage: storage });
+
+const isProduction = process.env.NODE_ENV === 'production';
+
 // if (isProduction) {
 //     mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true });
 // }
@@ -70,27 +72,46 @@ app.use("/task", taskRoutes)
 app.use("/post", postRoutes)
 app.use("/users", userRoutes)
 
-// app.get('/', (req, res) => {
-//     res.send('Hello World!');
-// });
+app.get('/', (
+    req,
+    res
+) => {
+    res.send('Hello World!');
+});
 
 /* MONGOOSE */
 
-const port = process.env.PORT || 8080;
+connectDB();
 
-// app.listen(port, () => {
-//     console.log(`Server is running on http://localhost:${port}`);
-// });
+const PORT = process.env.PORT || 8080;
 
-mongoose.connect(process.env.MONGODB_URI!, {
-
-}).then(() => {
-    app.listen(port, () => {
-        console.log(`Server is running on: http://localhost:${port}`);
-    });
-}).catch((error: any) => {
-    console.log(`Server did not connect: ${error}`);
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV}`);
 });
+
+// Xử lý tắt server an toàn (graceful shutdown) - tùy chọn
+process.on('SIGINT', () => {
+    console.log('SIGINT signal received: closing HTTP server');
+    // Đóng các kết nối khác (DB, etc.) ở đây nếu cần
+    process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+    console.log('SIGTERM signal received: closing HTTP server');
+    // Đóng các kết nối khác (DB, etc.) ở đây nếu cần
+    process.exit(0);
+});
+
+// mongoose.connect(process.env.MONGODB_URI!, {
+//
+// }).then(() => {
+//     app.listen(PORT, () => {
+//         console.log(`Server is running on http://localhost:${PORT}`);
+//     });
+// }).catch((error: any) => {
+//     console.log(`Server did not connect: ${error}`);
+// });
 
 // mongoose.connect(process.env.MONGODB_URI!, {
 //     useNewUrlParser: true,

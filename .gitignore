@@ -3,7 +3,7 @@
 #/mobile/node_modules
 #/server/node_modules
 #/process/node_modules
-#/template/node_modules
+#/website/node_modules
 #/default/node_modules
 
 /.idea/
@@ -12,7 +12,7 @@
 #/mobile/.idea
 #/server/.idea
 #/process/.idea
-#/template/.idea
+#/website/.idea
 #/default/.idea
 
 **/.vscode
@@ -20,7 +20,7 @@
 #/mobile/.vscode
 #/server/.vscode
 #/process/.vscode
-#/template/.vscode
+#/website/.vscode
 #/default/.vscode
 
 .env*
@@ -29,21 +29,19 @@
 client/.env.local
 client/.env.development 
 client/.env.production
-template/.env.local
-template/.env.development
-template/.env.production
+website/.env.local
+website/.env.development
+website/.env.production
 server/.env
 #/client/.env
 #/mobile/.env
 #/server/.env
 #/process/.env
-#/template/.env
+#/website/.env
 #/default/.env
 
 /client/.next
 /client/.vercel
-/default/.next
-/default/.vercel
 /server/dist
 /mobile/.expo
 /mobile/expo-env.d.ts
