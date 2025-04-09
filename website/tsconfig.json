@@ -6,11 +6,11 @@
   ],
   "compilerOptions": {
     "strict": true,
-    "baseUrl": "src/",
+    "baseUrl": "app/",
     "paths": {
       "@/*": ["./*"]
     },
-    "types": ["vite/template"],
+    "types": ["vite/template"]
   },
   "include": [
     "**/*.ts",
