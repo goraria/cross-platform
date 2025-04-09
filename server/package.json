@@ -27,8 +27,8 @@
     "esm": "npm run build && concurrently \"npx tsc -w\" \"nodemon --exec \"node --loader ts-node/esm\" app/index.ts\""
   },
   "dependencies": {
-    "@clerk/express": "^1.4.1",
-    "@prisma/client": "^6.5.0",
+    "@clerk/express": "^1.4.3",
+    "@prisma/client": "^6.6.0",
     "bcryptjs": "^3.0.2",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
@@ -43,7 +43,7 @@
     "multer": "^1.4.5-lts.2",
     "nodemailer": "^6.10.0",
     "pluralize": "^8.0.0",
-    "prisma": "^6.5.0",
+    "prisma": "^6.6.0",
     "sequelize": "^6.37.7",
     "socket.io": "^4.8.1",
     "uuid": "^11.1.0"
