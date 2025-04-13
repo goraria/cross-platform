@@ -1,13 +1,15 @@
 import { onAuthStateChanged } from "firebase/auth";
-import { useEffect, useState } from "react";
+import React, { ReactNode, useEffect, useState } from "react";
 
-export default function Header() {
+export const Header = ({ children }: { children: ReactNode }) => {
     const user = useUserSession();
 
     return (
         <>
+            {children}
+
         </>
-    );
+    )
 }
 
 function useUserSession(initialUser) {
