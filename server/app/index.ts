@@ -2,7 +2,9 @@
 
 import express, { NextFunction, Request, Response } from 'express';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 import bodyParser from 'body-parser';
+import session from 'express-session';
 import cors from 'cors';
 import helmet from "helmet";
 import morgan from "morgan";
@@ -28,9 +30,30 @@ app.use(express.json());
 app.use(helmet());
 app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(morgan("common"));
+app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(session({
+    secret: process.env.NODE_JWT_SECRET!,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production', // true nếu dùng HTTPS
+        httpOnly: true, // Ngăn JS phía client truy cập
+        maxAge: 1000 * 60 * 60 * 24,
+        // sameSite: 'Lax' // Hoặc 'Strict'. 'None' cần secure: true
+        // path: '/', // Phạm vi cookie (thường là gốc)
+    }
+}));
 app.use(cors());
+app.use(cors({
+    origin: [
+        process.env.NODE_CLIENT_URL!,
+        process.env.NODE_MOBILE_URL!,
+    ],
+    credentials: true,
+}));
 
 /* STATIC FILES */
 /* UPLOAD MULTER CONFIG */
