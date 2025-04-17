@@ -20,6 +20,7 @@
     "register": "nodemon -r tsconfig-paths/register app/index.ts",
     "lint": "eslint . --ext .ts",
     "built": "rimraf dist && npx tsc",
+    "seed": "ts-node prisma/seed.ts",
     "started": "npm run build && node dist/app/index.js",
     "pack": "npm run build && concurrently \"npx tsc -w\" \"nodemon --exec ts-node app/index.ts\"",
     "test": "echo \"Error: no test specified\" && exit 1",
