@@ -53,7 +53,7 @@ Config {
         package.json {
             "proxy": "http://localhost:5000"
         }
-        tailwind.config.js {
+        tailwind.config.ts {
             content: [
                 "./src/**/*.{js,jsx,ts,tsx}",
                 "./public/index.html",
