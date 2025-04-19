@@ -1,109 +1,95 @@
-import { StyleSheet, Image, Platform } from 'react-native';
+import * as React from 'react';
+import { View } from 'react-native';
+import Animated, { FadeInUp, FadeOutDown, LayoutAnimationConfig } from 'react-native-reanimated';
+import { Info } from '@/lib/icons/Info';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Text } from '@/components/ui/text';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+const GITHUB_AVATAR_URI =
+    'https://i.pinimg.com/originals/ef/a2/8d/efa28d18a04e7fa40ed49eeb0ab660db.jpg';
 
-export default function TabFiveScreen() {
+export default function Screen() {
+    const [progress, setProgress] = React.useState(78);
+
+    function updateProgressValue() {
+        setProgress(Math.floor(Math.random() * 100));
+    }
     return (
-        <ParallaxScrollView
-            headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-            headerImage={
-                <IconSymbol
-                    size={310}
-                    color="#808080"
-                    name="chevron.left.forwardslash.chevron.right"
-                    style={styles.headerImage}
-                />
-            }>
-            <ThemedView style={styles.titleContainer}>
-                <ThemedText type="title">Profile</ThemedText>
-            </ThemedView>
-            <ThemedText>This app includes example code to help you get started.</ThemedText>
-            <Collapsible title="File-based routing">
-                <ThemedText>
-                    This app japtor screens:{' '}
-                    <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-                    <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-                </ThemedText>
-                <ThemedText>
-                    The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-                    sets up the tab navigator.
-                </ThemedText>
-                <ExternalLink href="https://docs.expo.dev/router/introduction">
-                    <ThemedText type="link">Learn more</ThemedText>
-                </ExternalLink>
-            </Collapsible>
-            <Collapsible title="Android, iOS, and web support">
-                <ThemedText>
-                    You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-                    <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-                </ThemedText>
-            </Collapsible>
-            <Collapsible title="Images">
-                <ThemedText>
-                    For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-                    <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-                    different screen densities
-                </ThemedText>
-                <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }}/>
-                <ExternalLink href="https://reactnative.dev/docs/images">
-                    <ThemedText type="link">Learn more</ThemedText>
-                </ExternalLink>
-            </Collapsible>
-            <Collapsible title="Custom fonts">
-                <ThemedText>
-                    Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-                    <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-                        custom fonts such as this one.
-                    </ThemedText>
-                </ThemedText>
-                <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-                    <ThemedText type="link">Learn more</ThemedText>
-                </ExternalLink>
-            </Collapsible>
-            <Collapsible title="Light and dark mode components">
-                <ThemedText>
-                    This template has light and dark mode support. The{' '}
-                    <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-                    what the user's current color scheme is, and so you can adjust UI colors accordingly.
-                </ThemedText>
-                <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-                    <ThemedText type="link">Learn more</ThemedText>
-                </ExternalLink>
-            </Collapsible>
-            <Collapsible title="Animations">
-                <ThemedText>
-                    This template includes an example of an animated component. The{' '}
-                    <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-                    the powerful <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText>{' '}
-                    library to create a waving hand animation.
-                </ThemedText>
-                {Platform.select({
-                    ios: (
-                        <ThemedText>
-                            The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-                            component provides a parallax effect for the header image.
-                        </ThemedText>
-                    ),
-                })}
-            </Collapsible>
-        </ParallaxScrollView>
+        <View className='flex-1 justify-center items-center gap-5 p-6 bg-secondary/30'>
+            <Card className='w-full max-w-sm p-6 rounded-2xl'>
+                <CardHeader className='items-center'>
+                    <Avatar alt="Rick Sanchez's Avatar" className='w-24 h-24'>
+                        <AvatarImage source={{ uri: GITHUB_AVATAR_URI }} />
+                        <AvatarFallback>
+                            <Text>RS</Text>
+                        </AvatarFallback>
+                    </Avatar>
+                    <View className='p-3' />
+                    <CardTitle className='pb-2 text-center'>Rick Sanchez</CardTitle>
+                    <View className='flex-row'>
+                        <CardDescription className='text-base font-semibold'>Scientist</CardDescription>
+                        <Tooltip delayDuration={150}>
+                            <TooltipTrigger className='px-2 pb-0.5 active:opacity-50'>
+                                <Info size={14} strokeWidth={2.5} className='w-4 h-4 text-foreground/70' />
+                            </TooltipTrigger>
+                            <TooltipContent className='py-2 px-4 shadow'>
+                                <Text className='native:text-lg'>Freelance</Text>
+                            </TooltipContent>
+                        </Tooltip>
+                    </View>
+                </CardHeader>
+                <CardContent>
+                    <View className='flex-row justify-around gap-3'>
+                        <View className='items-center'>
+                            <Text className='text-sm text-muted-foreground'>Dimension</Text>
+                            <Text className='text-xl font-semibold'>C-137</Text>
+                        </View>
+                        <View className='items-center'>
+                            <Text className='text-sm text-muted-foreground'>Age</Text>
+                            <Text className='text-xl font-semibold'>70</Text>
+                        </View>
+                        <View className='items-center'>
+                            <Text className='text-sm text-muted-foreground'>Species</Text>
+                            <Text className='text-xl font-semibold'>Human</Text>
+                        </View>
+                    </View>
+                </CardContent>
+                <CardFooter className='flex-col gap-3 pb-0'>
+                    <View className='flex-row items-center overflow-hidden'>
+                        <Text className='text-sm text-muted-foreground'>Productivity:</Text>
+                        <LayoutAnimationConfig skipEntering>
+                            <Animated.View
+                                key={progress}
+                                entering={FadeInUp}
+                                exiting={FadeOutDown}
+                                className='w-11 items-center'
+                            >
+                                <Text className='text-sm font-bold text-sky-600'>{progress}%</Text>
+                            </Animated.View>
+                        </LayoutAnimationConfig>
+                    </View>
+                    <Progress value={progress} className='h-2' indicatorClassName='bg-sky-600' />
+                    <View />
+                    <Button
+                        variant='outline'
+                        className='shadow shadow-foreground/5'
+                        onPress={updateProgressValue}
+                    >
+                        <Text>Update</Text>
+                    </Button>
+                </CardFooter>
+            </Card>
+        </View>
     );
 }
-
-const styles = StyleSheet.create({
-    headerImage: {
-        color: '#808080',
-        bottom: -90,
-        left: -35,
-        position: 'absolute',
-    },
-    titleContainer: {
-        flexDirection: 'row',
-        gap: 8,
-    },
-});

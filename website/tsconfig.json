@@ -10,7 +10,9 @@
     "paths": {
       "@/*": ["./*"]
     },
-    "types": ["vite/template"]
+    "types": ["vite/template"],
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react"
   },
   "include": [
     "**/*.ts",
