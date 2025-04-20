@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { useState } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeInUp, FadeOutDown, LayoutAnimationConfig } from 'react-native-reanimated';
 import { Info } from '@/lib/icons/Info';
@@ -15,12 +15,13 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { Text } from '@/components/ui/text';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ThemeToggle } from "@/components/element/ThemeToggle";
 
 const GITHUB_AVATAR_URI =
-    'https://i.pinimg.com/originals/ef/a2/8d/efa28d18a04e7fa40ed49eeb0ab660db.jpg';
+    'https://avatars.githubusercontent.com/u/95116413?v=4';
 
-export default function Screen() {
-    const [progress, setProgress] = React.useState(78);
+export default function Profile() {
+    const [progress, setProgress] = useState(78);
 
     function updateProgressValue() {
         setProgress(Math.floor(Math.random() * 100));
@@ -29,14 +30,14 @@ export default function Screen() {
         <View className='flex-1 justify-center items-center gap-5 p-6 bg-secondary/30'>
             <Card className='w-full max-w-sm p-6 rounded-2xl'>
                 <CardHeader className='items-center'>
-                    <Avatar alt="Rick Sanchez's Avatar" className='w-24 h-24'>
+                    <Avatar alt="Ichibulup de Gortheia's Avatar" className='w-24 h-24'>
                         <AvatarImage source={{ uri: GITHUB_AVATAR_URI }} />
                         <AvatarFallback>
                             <Text>RS</Text>
                         </AvatarFallback>
                     </Avatar>
                     <View className='p-3' />
-                    <CardTitle className='pb-2 text-center'>Rick Sanchez</CardTitle>
+                    <CardTitle className='pb-2 text-center'>Japtor Gorthenburg</CardTitle>
                     <View className='flex-row'>
                         <CardDescription className='text-base font-semibold'>Scientist</CardDescription>
                         <Tooltip delayDuration={150}>
@@ -57,7 +58,7 @@ export default function Screen() {
                         </View>
                         <View className='items-center'>
                             <Text className='text-sm text-muted-foreground'>Age</Text>
-                            <Text className='text-xl font-semibold'>70</Text>
+                            <Text className='text-xl font-semibold'>22</Text>
                         </View>
                         <View className='items-center'>
                             <Text className='text-sm text-muted-foreground'>Species</Text>
@@ -67,7 +68,7 @@ export default function Screen() {
                 </CardContent>
                 <CardFooter className='flex-col gap-3 pb-0'>
                     <View className='flex-row items-center overflow-hidden'>
-                        <Text className='text-sm text-muted-foreground'>Productivity:</Text>
+                        <Text className='text-sm text-muted-foreground'>Productivity: </Text>
                         <LayoutAnimationConfig skipEntering>
                             <Animated.View
                                 key={progress}
@@ -90,6 +91,8 @@ export default function Screen() {
                     </Button>
                 </CardFooter>
             </Card>
+
+            <ThemeToggle/>
         </View>
     );
 }
