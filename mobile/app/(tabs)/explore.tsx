@@ -1,13 +1,13 @@
 import { StyleSheet, Image, Platform } from 'react-native';
 
-import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+import { Collapsible } from '@/components/element/Collapsible';
+import { ExternalLink } from '@/components/element/ExternalLink';
+import ParallaxScrollView from '@/components/element/ParallaxScrollView';
+import { ThemedText } from '@/components/element/ThemedText';
+import { ThemedView } from '@/components/element/ThemedView';
+import { IconSymbol } from '@/components/element/IconSymbol';
 
-export default function TabTwoScreen() {
+export default function Explore() {
     return (
         <ParallaxScrollView
             headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
