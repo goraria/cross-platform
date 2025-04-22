@@ -2,8 +2,7 @@ import '@/global.css';
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Platform } from "react-native";
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Theme } from "@react-navigation/native/lib/typescript/module/src";
+import { Theme, DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -66,6 +65,26 @@ export default function RootLayout() {
                 {/*<StatusBar style="auto"/>*/}
                 <Stack>
                     <Stack.Screen name="(tabs)" options={{
+                        headerShown: false,
+                        headerRight: () => <ThemeToggle/>,
+                    }}/>
+                    <Stack.Screen name="(auth)" options={{
+                        headerShown: false,
+                        headerRight: () => <ThemeToggle/>,
+                    }}/>
+                    <Stack.Screen name="(e-commerce)" options={{
+                        headerShown: false,
+                        headerRight: () => <ThemeToggle/>,
+                    }}/>
+                    <Stack.Screen name="(social-media)" options={{
+                        headerShown: false,
+                        headerRight: () => <ThemeToggle/>,
+                    }}/>
+                    <Stack.Screen name="(payment)" options={{
+                        headerShown: false,
+                        headerRight: () => <ThemeToggle/>,
+                    }}/>
+                    <Stack.Screen name="(setting)" options={{
                         headerShown: false,
                         headerRight: () => <ThemeToggle/>,
                     }}/>
