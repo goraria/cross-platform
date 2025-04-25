@@ -104,7 +104,7 @@ app.get('/', (
 
 /* MONGOOSE */
 
-connectDB();
+// connectDB();
 
 const PORT = process.env.PORT || 8080;
 

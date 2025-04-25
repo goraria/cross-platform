@@ -2,6 +2,10 @@ import { Request, Response, NextFunction, RequestHandler } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "@models/userModel";
+import prisma from "@config/prisma";
+// import { PrismaClient } from "@prisma/client";
+
+// const prisma = new PrismaClient();
 
 export const login: RequestHandler = async (
     req: Request,
@@ -9,20 +13,39 @@ export const login: RequestHandler = async (
     next: NextFunction
 ): Promise<any> => {
     try {
-        const { email, password } = req.body;
-        const user: any = await User.findOne({ email: email });
+        // const { email, password } = req.body;
+        // const user: any = await User.findOne({ email: email });
+        // if (!user) {
+        //     return res.status(400).json({ message: "User does not exist. " })
+        // }
+        //
+        // const isMatch = await bcrypt.compare(password, user.password);
+        // if (!isMatch) {
+        //     return res.status(400).json({ message: "Invalid credentials. " })
+        // }
+        //
+        // const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!);
+        // delete user.password;
+        // res.status(200).json({ token, user });
+        const user = await prisma.users.findFirst({
+            where: {
+                username: "goraria",
+            },
+        })
+
         if (!user) {
-            return res.status(400).json({ message: "User does not exist. " })
+            return res.status(400).json({ message: "User does not exist. " });
         }
 
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: "Invalid credentials. " })
-        }
+        let safeUser
 
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!);
-        delete user.password;
-        res.status(200).json({ token, user });
+        if (user) {
+            safeUser = {
+                ...user,
+                id: user.id.toString(),
+            };
+        }
+        res.status(200).json(safeUser);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }

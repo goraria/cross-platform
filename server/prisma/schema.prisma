@@ -1,0 +1,584 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("NODE_DATABASE_URL")
+  directUrl = env("NODE_DIRECT_URL")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model addresses {
+  id                                           BigInt   @id @default(autoincrement())
+  user_id                                      BigInt
+  recipient_name                               String   @db.VarChar(100)
+  recipient_phone                              String   @db.VarChar(20)
+  street_address                               String
+  ward                                         String?  @db.VarChar(100)
+  district                                     String   @db.VarChar(100)
+  city                                         String   @db.VarChar(100)
+  country                                      String   @default("Vietnam") @db.VarChar(100)
+  is_default_shipping                          Boolean  @default(false)
+  is_default_billing                           Boolean  @default(false)
+  created_at                                   DateTime @default(now()) @db.Timestamptz(6)
+  updated_at                                   DateTime @default(now()) @db.Timestamptz(6)
+  users                                        users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  orders_orders_billing_address_idToaddresses  orders[] @relation("orders_billing_address_idToaddresses")
+  orders_orders_shipping_address_idToaddresses orders[] @relation("orders_shipping_address_idToaddresses")
+
+  @@index([user_id], map: "idx_addresses_user_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model affiliate_stats {
+  id                  BigInt                @id @default(autoincrement())
+  affiliate_user_id   BigInt
+  associated_order_id BigInt?               @unique
+  commission_amount   Decimal?              @db.Decimal(10, 2)
+  click_source        String?
+  ip_address          String?               @db.VarChar(45)
+  status              affiliate_status_enum @default(Pending)
+  created_at          DateTime              @default(now()) @db.Timestamptz(6)
+  users               users                 @relation(fields: [affiliate_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  orders              orders?               @relation(fields: [associated_order_id], references: [id], onUpdate: NoAction)
+
+  @@index([affiliate_user_id], map: "idx_affiliate_stats_affiliate_user_id")
+  @@index([associated_order_id], map: "idx_affiliate_stats_associated_order_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model cart_items {
+  id         BigInt   @id @default(autoincrement())
+  user_id    BigInt
+  product_id BigInt
+  quantity   Int
+  added_at   DateTime @default(now()) @db.Timestamptz(6)
+  products   products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, product_id])
+  @@index([user_id], map: "idx_cart_items_user_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model categories {
+  id                 Int                  @id @default(autoincrement())
+  parent_category_id Int?
+  name               String               @db.VarChar(100)
+  slug               String               @unique @db.VarChar(120)
+  description        String?
+  categories         categories?          @relation("categoriesTocategories", fields: [parent_category_id], references: [id], onUpdate: NoAction)
+  other_categories   categories[]         @relation("categoriesTocategories")
+  post_categories    post_categories[]
+  product_categories product_categories[]
+
+  @@index([parent_category_id], map: "idx_categories_parent_category_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model comments {
+  id                BigInt                   @id @default(autoincrement())
+  user_id           BigInt
+  parent_type       comment_parent_type_enum
+  parent_id         BigInt
+  parent_comment_id BigInt?
+  content           String
+  created_at        DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime                 @default(now()) @db.Timestamptz(6)
+  comments          comments?                @relation("commentsTocomments", fields: [parent_comment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  other_comments    comments[]               @relation("commentsTocomments")
+  users             users                    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([parent_type, parent_id], map: "idx_comments_parent")
+  @@index([parent_comment_id], map: "idx_comments_parent_comment_id")
+  @@index([user_id], map: "idx_comments_user_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model conversation_participants {
+  conversation_id      BigInt
+  user_id              BigInt
+  joined_at            DateTime      @default(now()) @db.Timestamptz(6)
+  last_read_message_id BigInt?
+  conversations        conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  messages             messages?     @relation(fields: [last_read_message_id], references: [id], onUpdate: NoAction)
+  users                users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([conversation_id, user_id])
+  @@index([last_read_message_id], map: "idx_conversation_participants_last_read")
+  @@index([user_id], map: "idx_conversation_participants_user_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model conversations {
+  id                                               BigInt                      @id @default(autoincrement())
+  name                                             String?                     @db.VarChar(100)
+  type                                             conversation_type_enum      @default(Private)
+  creator_id                                       BigInt?
+  last_message_id                                  BigInt?
+  created_at                                       DateTime                    @default(now()) @db.Timestamptz(6)
+  updated_at                                       DateTime                    @default(now()) @db.Timestamptz(6)
+  conversation_participants                        conversation_participants[]
+  users                                            users?                      @relation(fields: [creator_id], references: [id], onUpdate: NoAction)
+  messages_conversations_last_message_idTomessages messages?                   @relation("conversations_last_message_idTomessages", fields: [last_message_id], references: [id], onUpdate: NoAction, map: "fk_conversations_last_message")
+  messages_messages_conversation_idToconversations messages[]                  @relation("messages_conversation_idToconversations")
+
+  @@index([creator_id], map: "idx_conversations_creator_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model follows {
+  follower_id                       BigInt
+  following_id                      BigInt
+  created_at                        DateTime @default(now()) @db.Timestamptz(6)
+  users_follows_follower_idTousers  users    @relation("follows_follower_idTousers", fields: [follower_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_follows_following_idTousers users    @relation("follows_following_idTousers", fields: [following_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([follower_id, following_id])
+  @@index([following_id], map: "idx_follows_following_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model likes {
+  id          BigInt                @id @default(autoincrement())
+  user_id     BigInt
+  target_type like_target_type_enum
+  target_id   BigInt
+  created_at  DateTime              @default(now()) @db.Timestamptz(6)
+  users       users                 @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, target_type, target_id])
+  @@index([target_type, target_id], map: "idx_likes_target")
+  @@index([user_id], map: "idx_likes_user_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model messages {
+  id                                                    BigInt                      @id @default(autoincrement())
+  conversation_id                                       BigInt
+  sender_id                                             BigInt
+  content                                               String
+  message_type                                          message_type_enum           @default(Text)
+  created_at                                            DateTime                    @default(now()) @db.Timestamptz(6)
+  conversation_participants                             conversation_participants[]
+  conversations_conversations_last_message_idTomessages conversations[]             @relation("conversations_last_message_idTomessages")
+  conversations_messages_conversation_idToconversations conversations               @relation("messages_conversation_idToconversations", fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users                                                 users                       @relation(fields: [sender_id], references: [id], onUpdate: NoAction)
+
+  @@index([conversation_id], map: "idx_messages_conversation_id")
+  @@index([sender_id], map: "idx_messages_sender_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model notifications {
+  id                                      BigInt    @id @default(autoincrement())
+  recipient_id                            BigInt
+  actor_id                                BigInt?
+  action_type                             String    @db.VarChar(50)
+  target_type                             String?   @db.VarChar(50)
+  target_id                               BigInt?
+  content                                 String?
+  is_read                                 Boolean   @default(false)
+  read_at                                 DateTime? @db.Timestamptz(6)
+  created_at                              DateTime  @default(now()) @db.Timestamptz(6)
+  users_notifications_actor_idTousers     users?    @relation("notifications_actor_idTousers", fields: [actor_id], references: [id], onUpdate: NoAction)
+  users_notifications_recipient_idTousers users     @relation("notifications_recipient_idTousers", fields: [recipient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([actor_id], map: "idx_notifications_actor_id")
+  @@index([recipient_id, is_read, created_at(sort: Desc)], map: "idx_notifications_recipient_id_read_created")
+  @@index([target_type, target_id], map: "idx_notifications_target")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model order_items {
+  id                BigInt   @id @default(autoincrement())
+  order_id          BigInt
+  product_id        BigInt
+  quantity          Int
+  price_at_purchase Decimal  @db.Decimal(12, 2)
+  product_name      String   @db.VarChar(255)
+  orders            orders   @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  products          products @relation(fields: [product_id], references: [id], onUpdate: NoAction)
+
+  @@index([order_id], map: "idx_order_items_order_id")
+  @@index([product_id], map: "idx_order_items_product_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model order_status_history {
+  id                 BigInt            @id @default(autoincrement())
+  order_id           BigInt
+  status             order_status_enum
+  changed_by_user_id BigInt?
+  notes              String?
+  created_at         DateTime          @default(now()) @db.Timestamptz(6)
+  users              users?            @relation(fields: [changed_by_user_id], references: [id], onUpdate: NoAction)
+  orders             orders            @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([order_id], map: "idx_order_status_history_order_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model orders {
+  id                                              BigInt                 @id @default(autoincrement())
+  user_id                                         BigInt
+  order_code                                      String                 @unique @db.VarChar(20)
+  total_amount                                    Decimal                @db.Decimal(14, 2)
+  shipping_fee                                    Decimal                @default(0) @db.Decimal(10, 2)
+  discount_amount                                 Decimal                @default(0) @db.Decimal(10, 2)
+  final_amount                                    Decimal                @db.Decimal(14, 2)
+  shipping_address_id                             BigInt?
+  billing_address_id                              BigInt?
+  status                                          order_status_enum      @default(Pending)
+  payment_method                                  String?                @db.VarChar(50)
+  payment_status                                  payment_status_enum    @default(Pending)
+  delivery_person_id                              BigInt?
+  notes                                           String?
+  affiliate_user_id                               BigInt?
+  created_at                                      DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at                                      DateTime               @default(now()) @db.Timestamptz(6)
+  affiliate_stats                                 affiliate_stats?
+  order_items                                     order_items[]
+  order_status_history                            order_status_history[]
+  users_orders_affiliate_user_idTousers           users?                 @relation("orders_affiliate_user_idTousers", fields: [affiliate_user_id], references: [id], onUpdate: NoAction)
+  addresses_orders_billing_address_idToaddresses  addresses?             @relation("orders_billing_address_idToaddresses", fields: [billing_address_id], references: [id], onUpdate: NoAction)
+  users_orders_delivery_person_idTousers          users?                 @relation("orders_delivery_person_idTousers", fields: [delivery_person_id], references: [id], onUpdate: NoAction)
+  addresses_orders_shipping_address_idToaddresses addresses?             @relation("orders_shipping_address_idToaddresses", fields: [shipping_address_id], references: [id], onUpdate: NoAction)
+  users_orders_user_idTousers                     users                  @relation("orders_user_idTousers", fields: [user_id], references: [id], onUpdate: NoAction)
+  payments                                        payments[]
+
+  @@index([affiliate_user_id], map: "idx_orders_affiliate_user_id")
+  @@index([delivery_person_id], map: "idx_orders_delivery_person_id")
+  @@index([status], map: "idx_orders_status")
+  @@index([user_id], map: "idx_orders_user_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model payments {
+  id                       BigInt              @id @default(autoincrement())
+  order_id                 BigInt?
+  user_id                  BigInt
+  transaction_id           String?             @unique @db.VarChar(100)
+  amount                   Decimal             @db.Decimal(14, 2)
+  payment_method           String              @db.VarChar(50)
+  status                   payment_status_enum @default(Pending)
+  payment_gateway_response String?
+  created_at               DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime            @default(now()) @db.Timestamptz(6)
+  orders                   orders?             @relation(fields: [order_id], references: [id], onUpdate: NoAction)
+  users                    users               @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+
+  @@index([order_id], map: "idx_payments_order_id")
+  @@index([user_id], map: "idx_payments_user_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model post_categories {
+  post_id     BigInt
+  category_id Int
+  categories  categories @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  posts       posts      @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([post_id, category_id])
+  @@index([category_id], map: "idx_post_categories_category_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model post_tags {
+  post_id BigInt
+  tag_id  Int
+  posts   posts  @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tags    tags   @relation(fields: [tag_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([post_id, tag_id])
+  @@index([tag_id], map: "idx_post_tags_tag_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model posts {
+  id              BigInt            @id @default(autoincrement())
+  author_id       BigInt
+  post_type       post_type_enum    @default(Social)
+  title           String?           @db.VarChar(255)
+  content         String
+  media_url       String?
+  visibility      visibility_enum   @default(Public)
+  allow_comments  Boolean           @default(true)
+  slug            String?           @unique @db.VarChar(255)
+  is_published    Boolean           @default(true)
+  published_at    DateTime?         @db.Timestamptz(6)
+  created_at      DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime          @default(now()) @db.Timestamptz(6)
+  post_categories post_categories[]
+  post_tags       post_tags[]
+  users           users             @relation(fields: [author_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([author_id], map: "idx_posts_author_id")
+  @@index([post_type], map: "idx_posts_post_type")
+  @@index([slug], map: "idx_posts_slug")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model product_categories {
+  product_id  BigInt
+  category_id Int
+  categories  categories @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  products    products   @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([product_id, category_id])
+  @@index([category_id], map: "idx_product_categories_category_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model product_images {
+  id            BigInt   @id @default(autoincrement())
+  product_id    BigInt
+  image_url     String
+  alt_text      String?  @db.VarChar(255)
+  display_order Int      @default(0)
+  products      products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([product_id], map: "idx_product_images_product_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model product_tags {
+  product_id BigInt
+  tag_id     Int
+  products   products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tags       tags     @relation(fields: [tag_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([product_id, tag_id])
+  @@index([tag_id], map: "idx_product_tags_tag_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model products {
+  id                 BigInt               @id @default(autoincrement())
+  seller_id          BigInt
+  name               String               @db.VarChar(255)
+  description        String?
+  sku                String?              @unique @db.VarChar(100)
+  price              Decimal              @db.Decimal(12, 2)
+  stock_quantity     Int                  @default(0)
+  thumbnail_url      String?
+  is_published       Boolean              @default(false)
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
+  cart_items         cart_items[]
+  order_items        order_items[]
+  product_categories product_categories[]
+  product_images     product_images[]
+  product_tags       product_tags[]
+  users              users                @relation(fields: [seller_id], references: [id], onUpdate: NoAction)
+
+  @@index([name], map: "idx_products_name")
+  @@index([seller_id], map: "idx_products_seller_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model projects {
+  id          BigInt   @id @default(autoincrement())
+  name        String   @db.VarChar(255)
+  description String?
+  owner_id    BigInt
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+  users       users    @relation(fields: [owner_id], references: [id], onUpdate: NoAction)
+  tasks       tasks[]
+
+  @@index([owner_id], map: "idx_projects_owner_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model roles {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique @db.VarChar(50)
+  description String?
+  user_roles  user_roles[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model tags {
+  id           Int            @id @default(autoincrement())
+  name         String         @unique @db.VarChar(50)
+  slug         String         @unique @db.VarChar(60)
+  post_tags    post_tags[]
+  product_tags product_tags[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model task_assignments {
+  task_id BigInt
+  user_id BigInt
+  tasks   tasks  @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users   users  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([task_id, user_id])
+  @@index([user_id], map: "idx_task_assignments_user_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model tasks {
+  id                             BigInt             @id @default(autoincrement())
+  creator_id                     BigInt
+  assignee_id                    BigInt?
+  project_id                     BigInt?
+  title                          String             @db.VarChar(255)
+  description                    String?
+  status                         task_status_enum   @default(ToDo)
+  priority                       task_priority_enum @default(Medium)
+  due_date                       DateTime?          @db.Date
+  created_at                     DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at                     DateTime           @default(now()) @db.Timestamptz(6)
+  completed_at                   DateTime?          @db.Timestamptz(6)
+  task_assignments               task_assignments[]
+  users_tasks_assignee_idTousers users?             @relation("tasks_assignee_idTousers", fields: [assignee_id], references: [id], onUpdate: NoAction)
+  users_tasks_creator_idTousers  users              @relation("tasks_creator_idTousers", fields: [creator_id], references: [id], onUpdate: NoAction)
+  projects                       projects?          @relation(fields: [project_id], references: [id], onUpdate: NoAction)
+
+  @@index([assignee_id], map: "idx_tasks_assignee_id")
+  @@index([creator_id], map: "idx_tasks_creator_id")
+  @@index([project_id], map: "idx_tasks_project_id")
+  @@index([status], map: "idx_tasks_status")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_roles {
+  user_id BigInt
+  role_id Int
+  roles   roles  @relation(fields: [role_id], references: [id], onUpdate: NoAction)
+  users   users  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([user_id, role_id])
+  @@index([role_id], map: "idx_user_roles_role_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model users {
+  id                                              BigInt                      @id @default(autoincrement())
+  username                                        String                      @unique @db.VarChar(50)
+  email                                           String                      @unique @db.VarChar(255)
+  phone_number                                    String?                     @unique @db.VarChar(20)
+  password_hash                                   String                      @db.VarChar(255)
+  full_name                                       String?                     @db.VarChar(100)
+  first_name                                      String?                     @db.VarChar(100)
+  last_name                                       String?                     @db.VarChar(100)
+  profile_picture_url                             String?
+  cover_picture_url                               String?
+  bio                                             String?
+  location                                        String?                     @db.VarChar(255)
+  is_active                                       Boolean                     @default(true)
+  is_verified                                     Boolean                     @default(false)
+  last_login_at                                   DateTime?                   @db.Timestamptz(6)
+  created_at                                      DateTime                    @default(now()) @db.Timestamptz(6)
+  updated_at                                      DateTime                    @default(now()) @db.Timestamptz(6)
+  addresses                                       addresses[]
+  affiliate_stats                                 affiliate_stats[]
+  cart_items                                      cart_items[]
+  comments                                        comments[]
+  conversation_participants                       conversation_participants[]
+  conversations                                   conversations[]
+  follows_follows_follower_idTousers              follows[]                   @relation("follows_follower_idTousers")
+  follows_follows_following_idTousers             follows[]                   @relation("follows_following_idTousers")
+  likes                                           likes[]
+  messages                                        messages[]
+  notifications_notifications_actor_idTousers     notifications[]             @relation("notifications_actor_idTousers")
+  notifications_notifications_recipient_idTousers notifications[]             @relation("notifications_recipient_idTousers")
+  order_status_history                            order_status_history[]
+  orders_orders_affiliate_user_idTousers          orders[]                    @relation("orders_affiliate_user_idTousers")
+  orders_orders_delivery_person_idTousers         orders[]                    @relation("orders_delivery_person_idTousers")
+  orders_orders_user_idTousers                    orders[]                    @relation("orders_user_idTousers")
+  payments                                        payments[]
+  posts                                           posts[]
+  products                                        products[]
+  projects                                        projects[]
+  task_assignments                                task_assignments[]
+  tasks_tasks_assignee_idTousers                  tasks[]                     @relation("tasks_assignee_idTousers")
+  tasks_tasks_creator_idTousers                   tasks[]                     @relation("tasks_creator_idTousers")
+  user_roles                                      user_roles[]
+
+  @@index([email], map: "idx_users_email")
+}
+
+enum affiliate_status_enum {
+  Pending
+  Approved
+  Rejected
+  Paid
+}
+
+enum comment_parent_type_enum {
+  Post
+  Product
+  Task
+}
+
+enum conversation_type_enum {
+  Private
+  Group
+}
+
+enum like_target_type_enum {
+  Post
+  Comment
+  Product
+}
+
+enum message_type_enum {
+  Text
+  Image
+  File
+  System
+}
+
+enum order_status_enum {
+  Pending
+  Processing
+  Pickup
+  Dispatched
+  PackageArrived
+  OutForDelivery
+  Delivered
+  Cancelled
+  Returned
+}
+
+enum payment_status_enum {
+  Pending
+  Paid
+  Failed
+  Refunded
+}
+
+enum post_type_enum {
+  Social
+  Blog
+}
+
+enum task_priority_enum {
+  Low
+  Medium
+  High
+  Urgent
+}
+
+enum task_status_enum {
+  ToDo
+  InProgress
+  Done
+  Cancelled
+}
+
+enum visibility_enum {
+  Public
+  Followers
+  Private
+}
