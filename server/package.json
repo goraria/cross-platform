@@ -50,7 +50,8 @@
     "prisma": "^6.6.0",
     "sequelize": "^6.37.7",
     "socket.io": "^4.8.1",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "zod": "^3.24.3"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.8",
@@ -78,7 +79,7 @@
     "@middlewares": "dist/middlewares",
     "@models": "dist/models",
     "@routes": "dist/routes",
-    "@utils": "dist/utils",
+    "@constants": "dist/constants",
     "@types": "dist/types"
   }
 }
