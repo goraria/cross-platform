@@ -1,11 +1,17 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/layout/mode-toggle";
+import { BoxIcon } from "@/components/elements/box-icon";
 
 export default function Home() {
   return (
     <>
       <Button variant={"default"}>Japtor</Button>
+      <BoxIcon
+        type={"solid"}
+        name={"heart"}
+        size={"lg"}
+      />
       <ModeToggle/>
     </>
   )

@@ -87,7 +87,7 @@ export const login: RequestHandler = async (
                 id: user.id.toString(),
             };
         }
-        res.status(200).json({ token, safeUser });
+        res.status(200).json({ token, user: safeUser });
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }

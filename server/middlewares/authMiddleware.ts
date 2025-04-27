@@ -84,54 +84,54 @@ export const authMiddleware = (allowedRoles: string[]) => {
     };
 };
 
-export const authenticate: RequestHandler = (req, res, next) => {
-    try {
-        // 1) ưu tiên đọc từ cookie
-        let token = req.cookies?.jid as string | undefined;
+// export const authenticate: RequestHandler = (req, res, next) => {
+//     try {
+//         // 1) ưu tiên đọc từ cookie
+//         let token = req.cookies?.jid as string | undefined;
+//
+//         // 2) nếu không có cookie, fallback header
+//         if (!token) {
+//             const auth = req.headers.authorization;
+//             if (auth && auth.startsWith("Bearer ")) {
+//                 token = auth.slice(7).trim();
+//             }
+//         }
+//
+//         if (!token) {
+//             return res.status(401).json({ message: "No token provided" });
+//         }
+//
+//         // 3) verify
+//         const decoded = jwt.verify(token, process.env.JWT_SECRET!) as AccessTokenPayload;
+//
+//         // 4) gán req.user
+//         req.user = {
+//             id: decoded.sub,
+//             role: decoded["custom:role"] ?? "user",
+//         };
+//
+//         next();
+//     } catch (err: any) {
+//         console.error("Auth error:", err);
+//         // nếu token expired thì trả 401, còn lại 400
+//         const status = err.name === "TokenExpiredError" ? 401 : 400;
+//         return res.status(status).json({ message: err.message });
+//     }
+// };
 
-        // 2) nếu không có cookie, fallback header
-        if (!token) {
-            const auth = req.headers.authorization;
-            if (auth && auth.startsWith("Bearer ")) {
-                token = auth.slice(7).trim();
-            }
-        }
-
-        if (!token) {
-            return res.status(401).json({ message: "No token provided" });
-        }
-
-        // 3) verify
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as AccessTokenPayload;
-
-        // 4) gán req.user
-        req.user = {
-            id: decoded.sub,
-            role: decoded["custom:role"] ?? "user",
-        };
-
-        next();
-    } catch (err: any) {
-        console.error("Auth error:", err);
-        // nếu token expired thì trả 401, còn lại 400
-        const status = err.name === "TokenExpiredError" ? 401 : 400;
-        return res.status(status).json({ message: err.message });
-    }
-};
-
-export const authorize = (allowedRoles: string[]): RequestHandler => {
-    return (req, res, next) => {
-        // authenticate phải chạy trước
-        if (!req.user) {
-            return res.status(401).json({ message: "Unauthorized" });
-        }
-
-        const userRole = req.user.role.toLowerCase();
-        const allowed = allowedRoles.map(r => r.toLowerCase());
-        if (!allowed.includes(userRole)) {
-            return res.status(403).json({ message: "Forbidden: insufficient role" });
-        }
-
-        next();
-    };
-};
+// export const authorize = (allowedRoles: string[]): RequestHandler => {
+//     return (req, res, next) => {
+//         // authenticate phải chạy trước
+//         if (!req.user) {
+//             return res.status(401).json({ message: "Unauthorized" });
+//         }
+//
+//         const userRole = req.user.role.toLowerCase();
+//         const allowed = allowedRoles.map(r => r.toLowerCase());
+//         if (!allowed.includes(userRole)) {
+//             return res.status(403).json({ message: "Forbidden: insufficient role" });
+//         }
+//
+//         next();
+//     };
+// };
