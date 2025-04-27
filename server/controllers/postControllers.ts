@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import Post from "@models/postModel";
 import User from "@models/userModel";
-import { userType } from "@utils/types";
+import { userType } from "@constants/types";
 
 /* CREATE */
 export const createPost = async (
