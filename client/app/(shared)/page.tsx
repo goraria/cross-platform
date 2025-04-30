@@ -1,7 +1,10 @@
+"use client";
+
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/layout/mode-toggle";
 import { BoxIcon } from "@/components/elements/box-icon";
+import { toast } from "sonner";
 
 export default function Home() {
   return (
@@ -13,6 +16,22 @@ export default function Home() {
         size={"lg"}
       />
       <ModeToggle/>
+
+      <Button
+        variant="outline"
+        onClick={() =>
+          toast("Event has been created", {
+            description: "Japtor Gorthenburg",
+            action: {
+              label: "Undo",
+              onClick: () => console.log("Undo"),
+            },
+
+          })
+        }
+      >
+        Show Toast
+      </Button>
     </>
   )
 }

@@ -8,7 +8,7 @@ export default function AuthLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
-  const [layout, setLayout] = useState(0);
+  const [layout, setLayout] = useState(-1);
 
   return (
     <>
@@ -40,7 +40,7 @@ export default function AuthLayout({
             </div>
             <div className="bg-muted relative hidden lg:block">
               <img
-                src="/placeholder.svg"
+                src="/backgrounds/placeholder.svg"
                 alt="Image"
                 className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
               />
@@ -77,7 +77,15 @@ export default function AuthLayout({
             </div>
           </div>
         </>
-      ) : (<></>)}
+      ) : (
+        <>
+          <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
+            <div className="flex w-full max-w-sm flex-col gap-6">
+              {children}
+            </div>
+          </div>
+        </>
+      )}
       {/*{children}*/}
     </>
   )
