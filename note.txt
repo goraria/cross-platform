@@ -77,3 +77,20 @@ Config {
     }
 }
 
+Command {
+    client: {
+        start: "npm start",
+        build: "npm run build",
+        test: "npm test",
+        eject: "npm run eject",
+        lint: "npm run lint",
+        format: "npm run format"
+    }
+    server: {
+        start: "node app/index.js",
+        dev: "nodemon app/index.js",
+        build: "tsc -p tsconfig.json",
+        test: "jest --watchAll --detectOpenHandles --forceExit --runInBand"
+    }
+}
+
