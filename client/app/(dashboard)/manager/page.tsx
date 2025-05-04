@@ -22,7 +22,7 @@ export default function Page() {
     <>
       {/*<Dashboard/>*/}
       {/*<Products01/>*/}
-      <Sidebar15/>
+      <Sidebar03/>
     </>
   );
 }
