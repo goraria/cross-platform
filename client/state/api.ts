@@ -4,7 +4,7 @@ import { BaseQueryApi, FetchArgs } from "@reduxjs/toolkit/query";
 // import { Clerk } from "@clerk/clerk-js";
 import { toast } from "sonner";
 import { User } from "./types";
-
+import { RegisterInput } from "@/constants/schemas";
 const customBaseQuery = async (
   args: string | FetchArgs,
   api: BaseQueryApi,
@@ -113,6 +113,7 @@ export const api = createApi({
   // baseQuery: customBaseQuery,
   baseQuery: fetchBaseQuery({
     baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+    // credentials: 'include',
     prepareHeaders: async (headers) => {
       // const session = await fetchAuthSession();
       // const { idToken } = session.tokens ?? {};
@@ -124,8 +125,35 @@ export const api = createApi({
   }),
   reducerPath: "api",
   tagTypes: ["Courses", "Users", "UserCourseProgress"],
-  endpoints: (build) => ({
-    getUsers: build.query<User[], { category?: string }>({
+  endpoints: (builder) => ({
+    register: builder.mutation<User, RegisterInput>({
+      query: (data) => ({
+        url: "/auth/register",
+        method: "POST",
+        body: data,
+      }),
+    }),
+    login: builder.mutation({
+      query: (credentials) => ({
+        url: '/auth/login',
+        method: 'POST',
+        body: credentials,
+      }),
+    }),
+    refreshToken: builder.mutation({
+      query: () => ({
+        url: '/auth/refresh-token',
+        method: 'POST',
+      }),
+    }),
+    logout: builder.mutation({
+      query: () => ({
+        url: '/auth/logout',
+        method: 'POST',
+      }),
+    }),
+
+    getUsers: builder.query<User[], { category?: string }>({
       query: () => "/manage/users",
       providesTags: ["Users"],
     }),
@@ -291,6 +319,7 @@ export const api = createApi({
 });
 
 export const {
+  useRegisterMutation,
   useGetUsersQuery,
   // useUpdateUserMutation,
   // useCreateCourseMutation,

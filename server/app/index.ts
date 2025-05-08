@@ -36,11 +36,11 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(session({
-  secret: process.env.NODE_JWT_SECRET!,
+  secret: process.env.EXPRESS_JWT_SECRET!,
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // true nếu dùng HTTPS
+    secure: process.env.EXPRESS_ENV === 'production', // true nếu dùng HTTPS
     httpOnly: true, // Ngăn JS phía client truy cập
     maxAge: 1000 * 60 * 60 * 24,
     // sameSite: 'Lax' // Hoặc 'Strict'. 'None' cần secure: true
@@ -50,8 +50,8 @@ app.use(session({
 app.use(cors());
 app.use(cors({
   origin: [
-    process.env.NODE_CLIENT_URL!,
-    process.env.NODE_MOBILE_URL!,
+    process.env.EXPRESS_CLIENT_URL!,
+    process.env.EXPRESS_MOBILE_URL!,
   ],
   credentials: true,
 }));
@@ -83,7 +83,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = process.env.EXPRESS_ENV === 'production';
 
 // if (isProduction) {
 //     mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true });
@@ -108,11 +108,11 @@ app.get('/', (
 
 // connectDB();
 
-const PORT = process.env.PORT || 8080;
+const port = process.env.EXPRESS_PORT || 8080;
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV}`);
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
+  console.log(`Environment: ${process.env.EXPRESS_ENV}`);
 });
 
 // Xử lý tắt server an toàn (graceful shutdown) - tùy chọn
