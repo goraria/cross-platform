@@ -13,7 +13,6 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import Sidebar02 from "@/components/blocks/sidebar-02/page";
 
 export default function Sidebar09() {
   return (

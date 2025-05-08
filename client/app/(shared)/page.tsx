@@ -5,8 +5,13 @@ import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/layout/mode-toggle";
 import { BoxIcon } from "@/components/elements/box-icon";
 import { toast } from "sonner";
+import { useGetUsersQuery } from "@/state/api";
 
 export default function Home() {
+  const { data: users } = useGetUsersQuery({});
+
+  console.log(users)
+
   return (
     <>
       <Button variant={"default"}>Japtor</Button>
@@ -32,6 +37,7 @@ export default function Home() {
       >
         Show Toast
       </Button>
+      users
     </>
   )
 }
