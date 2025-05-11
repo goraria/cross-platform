@@ -7,6 +7,7 @@ import prisma from "@config/prisma";
 import { AuthRequest } from "@middlewares/authRequire";
 import { generateSign, logoutSign, refreshSign } from "@/services/authServices";
 import { BadRequestError } from "@/lib/errors";
+import { registerSchema } from "@/constants/schemas";
 // import { PrismaClient } from "@prisma/client";
 
 // const prisma = new PrismaClient();
@@ -129,15 +130,43 @@ export const register: RequestHandler = async (
   next: NextFunction
 ) => {
   try {
+    const error = registerSchema.parse(req.body);
+    
+    if (error) {
+      res.status(400).json({
+        success: false,
+        message: 'Validation error'
+      });
+    }
+
     const {
       first_name,
       last_name,
       username,
       email,
       password,
+      phone_number,
     } = req.body;
+    // Check if user exists
+    const existUser = await prisma.users.findFirst({
+      where: {
+        OR: [
+          { email },
+          { username }
+        ]
+      }
+    })
 
-    // console.log("req.body", req.body);
+    if (existUser) {
+      // throw new Error('User already exists')
+      if (existUser.username === username) {
+        res.status(400).json({ message: 'Email already exists' })
+      } else if (existUser.email === email) {
+        res.status(400).json({ message: 'Username already exists' })
+      } else {
+        res.status(400).json({ message: 'User already exists' })
+      }
+    }
 
     const salt = await bcrypt.genSalt();
     const passwordHash = await bcrypt.hash(password, salt);
@@ -150,6 +179,7 @@ export const register: RequestHandler = async (
         full_name: `${first_name} ${last_name}`,
         username,
         email,
+        phone_number,
         role: "user",
         status: "inactive",
         password_hash: passwordHash,

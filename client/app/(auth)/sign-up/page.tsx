@@ -51,6 +51,7 @@ export default function SignUpPage() {
     } catch (error: any) {
       // console.log("Register error:", error);
       toast.error(error.data?.message || "Registration failed");
+      // toast.error("Japtor");
     }
   };
 
