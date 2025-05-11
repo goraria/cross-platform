@@ -13,7 +13,8 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { Toaster } from "sonner";
 import Providers from "@/app/providers";
-
+import { ModeToggle } from "@/components/elements/mode-toggle";
+import { QuickSetting } from "@/components/elements/quick-setting";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -48,6 +49,12 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             {children}
+            <ModeToggle
+              className="absolute top-20 right-5"
+            />
+            <QuickSetting
+              className="absolute top-5 right-5"
+            />
             <Toaster />
           </ThemeProvider>
         </Providers>

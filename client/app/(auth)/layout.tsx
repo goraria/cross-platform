@@ -46,6 +46,7 @@ export default function AuthLayout({
                       width={64}
                       height={64}
                       // className="rounded-full"
+                      // className="invert-[0.8] dark:invert-0"
                     />
                   </div>
                   Gorth Inc.
@@ -64,9 +65,10 @@ export default function AuthLayout({
               {/*  className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"*/}
               {/*/>*/}
               <img
-                src="/backgrounds/placeholder.svg"
+                // src="/backgrounds/placeholder.svg"
+                src="/avatars/suit-gradient.jpeg"
                 alt="Image"
-                className="absolute inset-0 h-full w-full object-cover"
+                className="absolute inset-0 h-full w-full object-cover brightness-[0.9] dark:invert dark:grayscale"
               />
             </div>
           </div>

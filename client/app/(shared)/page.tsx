@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ModeToggle } from "@/components/layout/mode-toggle";
+import { ModeToggle } from "@/components/elements/mode-toggle";
 import { BoxIcon } from "@/components/elements/box-icon";
 import { toast } from "sonner";
 import { useGetUsersQuery } from "@/state/api";

@@ -3,12 +3,53 @@ import jwt from 'jsonwebtoken';
 import prisma from "@config/prisma";
 import { v4 as uuidv4 } from 'uuid';
 import { UnauthorizedError } from '@/lib/errors';
+import { RegisterInput } from '@/constants/schemas';
 
-export const createUser = async (userData: any) => {
-	const user = await prisma.users.create({
-		data: userData
+export const createUser = async (data: RegisterInput) => {
+	const {
+		first_name,
+		last_name,
+		username,
+		email,
+		password,
+	} = data;
+	// Check if user exists
+	const existUser = await prisma.users.findFirst({
+		where: {
+			OR: [
+				{ email },
+				{ username }
+			]
+		}
+	})
+
+	if (existUser) {
+		throw new Error('User already exists')
+	}
+
+	const salt = await bcrypt.genSalt();
+	const passwordHash = await bcrypt.hash(password, salt);
+
+	const newUser = await prisma.users.create({
+		data: {
+			id: uuidv4(),
+			first_name,
+			last_name,
+			full_name: `${first_name} ${last_name}`,
+			username,
+			email,
+			role: "user",
+			status: "inactive",
+			password_hash: passwordHash,
+			// viewed_profile: 0,
+			// impressions: 0,
+			created_at: new Date(),
+			updated_at: new Date(),
+		}
 	});
-	return user;
+
+	// const savedUser = await newUser.save();
+	return newUser;
 };
 
 export const generateTokens = (
