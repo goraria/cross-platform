@@ -24,7 +24,7 @@ export function ModeToggle({
   const { theme, setTheme } = useTheme()
 
   return (
-    <span className={cn("m-0 p-0", className)} {...props}>
+    <span className={cn("", className)} {...props}>
       {layout === 1 ? (
         <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -48,7 +48,7 @@ export function ModeToggle({
       </DropdownMenu>
       ) : layout === 2 ? (
         <Button 
-          variant="outline" 
+          variant="ghost"
           size="icon" 
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
         >
