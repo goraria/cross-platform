@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "boxicons/css/boxicons.css";
+@import '../styles/container.css';
+@import '../styles/personal.css';
 
 @custom-variant dark (&:is(.dark *));
 

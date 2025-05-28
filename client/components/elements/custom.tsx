@@ -27,6 +27,7 @@ interface RadioInputOptionProps {
 	pull?: Pull
 	border?: Border
 	onSelect: (value: string) => void
+	style?: React.CSSProperties
   // position?: Position
 }
 
@@ -55,12 +56,14 @@ export function RadioInputOption({
 	// tag = "visible",
 	type = "visible",
 	hoverEffect = true,
-	className,
 	icon,
 	flip,
 	pull = "left",
 	border = "square",
 	onSelect,
+	className,
+	style,
+	...props
 }: RadioInputOptionProps) {
 
 	const getFlipClasses = (flip?: Flip) => {
@@ -124,6 +127,8 @@ export function RadioInputOption({
 					// tag && "inline-flex",
 					className
 				)}
+				style={style}
+				{...props}
 			>
 				<RadioGroupItem
 					className={cn(type === "hidden" ? "hidden" : "")}

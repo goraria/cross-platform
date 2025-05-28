@@ -1,28 +1,49 @@
-import Dashboard from "@/components/blocks/dashboard-01/page";
-import Products01 from "@/components/blocks/products-01/page";
-import Sidebar01 from "@/components/blocks/sidebar-01/page";
-import Sidebar02 from "@/components/blocks/sidebar-02/page";
-import Sidebar03 from "@/components/blocks/sidebar-03/page";
-import Sidebar04 from "@/components/blocks/sidebar-04/page";
-import Sidebar05 from "@/components/blocks/sidebar-05/page";
-import Sidebar06 from "@/components/blocks/sidebar-06/page";
-import Sidebar07 from "@/components/blocks/sidebar-07/page";
-import Sidebar08 from "@/components/blocks/sidebar-08/page";
-import Sidebar09 from "@/components/blocks/sidebar-09/page";
-import Sidebar10 from "@/components/blocks/sidebar-10/page";
-import Sidebar11 from "@/components/blocks/sidebar-11/page";
-import Sidebar12 from "@/components/blocks/sidebar-12/page";
-import Sidebar13 from "@/components/blocks/sidebar-13/page";
-import Sidebar14 from "@/components/blocks/sidebar-14/page";
-import Sidebar15 from "@/components/blocks/sidebar-15/page";
-import Sidebar16 from "@/components/blocks/sidebar-16/page";
+import React from "react"
+import { AppSidebar } from "@/app/(dashboard)/manager/components/app-sidebar"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import { Separator } from "@/components/ui/separator"
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
 
-export default function Page() {
+export default function ManagerPage() {
   return (
     <>
-      {/*<Dashboard/>*/}
-      {/*<Products01/>*/}
-      <Sidebar15/>
+      <div className="flex flex-1 flex-col gap-4 p-4 pb-0">
+        <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+          <div className="bg-muted/50 aspect-video rounded-xl" />
+        </div>
+        <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" />
+      </div>
     </>
-  );
+  )
 }

@@ -134,3 +134,8 @@ export const testUsers = {
   },
   managerRole: "manager",
 };
+
+export const appGlobal = {
+  name: "Schweitzenburg",
+  description: "Design by Japtor Gorthenburg"
+}
