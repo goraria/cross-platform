@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation";
 import { ArchiveX, ChevronRight, File, Inbox, type LucideIcon, Send, Trash2 } from "lucide-react";
 
 import {
@@ -21,46 +22,6 @@ import {
   useSidebar
 } from "@/components/ui/sidebar";
 
-const data = {
-  user: {
-    name: "Japtor",
-    email: "japtor@gorth.org",
-    avatar: "/avatars/waddles.jpeg",
-  },
-  item: [
-    {
-      title: "Inbox",
-      url: "/message",
-      icon: Inbox,
-      isActive: true,
-    },
-    {
-      title: "Drafts",
-      url: "/message/drafts",
-      icon: File,
-      isActive: false,
-    },
-    {
-      title: "Sent",
-      url: "/message/sent",
-      icon: Send,
-      isActive: false,
-    },
-    {
-      title: "Junk",
-      url: "/message/junk",
-      icon: ArchiveX,
-      isActive: false,
-    },
-    {
-      title: "Trash",
-      url: "/message/trash",
-      icon: Trash2,
-      isActive: false,
-    },
-  ],
-}
-
 export function NavMain({
   items,
 }: {
@@ -75,7 +36,8 @@ export function NavMain({
     }[]
   }[]
 }) {
-  const [activeItem, setActiveItem] = useState(data.item[0])
+  const router = useRouter()
+  const pathname = usePathname()
   const { setOpen } = useSidebar()
 
   return (
@@ -86,12 +48,15 @@ export function NavMain({
           <Collapsible
             key={item.title}
             asChild
-            defaultOpen={item.isActive}
+            defaultOpen={pathname.startsWith(item.url)}
             className="group/collapsible"
           >
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
-                <SidebarMenuButton tooltip={item.title}>
+                <SidebarMenuButton 
+                  tooltip={item.title}
+                  isActive={pathname.startsWith(item.url)}
+                >
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>
                   <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -107,25 +72,15 @@ export function NavMain({
                           hidden: false,
                         }}
                         onClick={() => {
-                          // setActiveItem(subItem)
                           setOpen(true);
                         }}
-                        isActive={activeItem?.title === item.title}
+                        isActive={pathname === subItem.url}
                         className="px-2.5 md:px-2"
                       >
                         <Link href={subItem.url}>
-                          {/* {subItem.icon && <subItem.icon />} */}
                           <span>{subItem.title}</span>
                         </Link>
                       </SidebarMenuButton>
-
-                      {/*<SidebarMenuSubItem key={subItem.title}>*/}
-                      {/*  <SidebarMenuSubButton asChild>*/}
-                      {/*    <Link href={subItem.url}>*/}
-                      {/*      <span>{subItem.title}</span>*/}
-                      {/*    </Link>*/}
-                      {/*  </SidebarMenuSubButton>*/}
-                      {/*</SidebarMenuSubItem>*/}
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenuSub>
