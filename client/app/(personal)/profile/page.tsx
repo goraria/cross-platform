@@ -68,7 +68,7 @@ export default function ProfilePage() {
                   </li>
                   <li className="list-inline-item">
                     <MapPin size={20} className="align-top me-2" />
-                    <span className="font-medium">Vatican City</span>
+                    <span className="font-medium">Milan City</span>
                   </li>
                   <li className="list-inline-item">
                     <CalendarDays size={20} className="align-top me-2" />

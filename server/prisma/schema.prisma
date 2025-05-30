@@ -10,8 +10,8 @@ datasource db {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model addresses {
-  id                                           String   @id @default(uuid())
-  user_id                                      String
+  id                String   @id @default(uuid()) @db.Uuid
+  user_id           String   @db.Uuid
   recipient_name                               String   @db.VarChar(100)
   recipient_phone                              String   @db.VarChar(20)
   street_address                               String   @db.VarChar(255)
@@ -34,9 +34,9 @@ model addresses {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model affiliate_stats {
-  id                String    @id @default(uuid())
-  affiliate_user_id String
-  associated_order_id String? @unique
+  id                String   @id @default(uuid()) @db.Uuid
+  affiliate_user_id String   @db.Uuid
+  associated_order_id String? @unique @db.Uuid
   commission_amount   Decimal? @db.Decimal(10, 2)
   click_source        String?  @db.VarChar(255)
   ip_address          String?  @db.VarChar(45)
@@ -46,16 +46,15 @@ model affiliate_stats {
   orders              orders?  @relation(fields: [associated_order_id], references: [id])
 
   @@index([affiliate_user_id], map: "idx_affiliate_stats_user")
-  @@index([status], map: "idx_affiliate_stats_status")
   @@index([created_at], map: "idx_affiliate_stats_created")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model cart_items {
-  id         String   @id @default(uuid())
-  user_id    String
-  product_id String
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String   @db.Uuid
+  product_id String   @db.Uuid
   quantity   Int
   added_at   DateTime @default(now()) @db.Timestamptz(6)
   products   products @relation(fields: [product_id], references: [id], onDelete: Cascade)
@@ -68,8 +67,8 @@ model cart_items {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model categories {
-  id                 Int                  @id @default(autoincrement())
-  parent_category_id Int?
+  id                 String   @id @default(uuid()) @db.Uuid
+  parent_category_id String?  @db.Uuid
   name               String               @db.VarChar(100)
   slug               String               @unique @db.VarChar(120)
   description        String?              @db.Text
@@ -77,6 +76,7 @@ model categories {
   other_categories   categories[]         @relation("categoriesTocategories")
   post_categories    post_categories[]
   product_categories product_categories[]
+  menu_items         menu_items[]
 
   @@index([parent_category_id], map: "idx_categories_parent")
   @@index([slug], map: "idx_categories_slug")
@@ -84,19 +84,18 @@ model categories {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model comments {
-  id                String    @id @default(uuid())
-  user_id           String
-  parent_type       comment_parent_type_enum
-  parent_id         String
-  parent_comment_id String?
+  id                String    @id @default(uuid()) @db.Uuid
+  user_id           String    @db.Uuid
+  parent_id         String    @db.Uuid
+  parent_comment_id String?   @db.Uuid
   content           String    @db.Text
   created_at        DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+  updated_at        DateTime  @default(now()) @db.Timestamptz(6)
   comments          comments? @relation("commentsTocomments", fields: [parent_comment_id], references: [id], onDelete: Cascade)
   other_comments    comments[] @relation("commentsTocomments")
   users             users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@index([parent_type, parent_id], map: "idx_comments_parent")
+  @@index([parent_id], map: "idx_comments_parent")
   @@index([parent_comment_id], map: "idx_comments_parent_comment")
   @@index([user_id], map: "idx_comments_user")
   @@index([created_at], map: "idx_comments_created")
@@ -104,10 +103,10 @@ model comments {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model conversation_participants {
-  conversation_id      String
-  user_id             String
+  conversation_id      String   @db.Uuid
+  user_id              String   @db.Uuid
+  last_read_message_id String?  @db.Uuid
   joined_at            DateTime @default(now()) @db.Timestamptz(6)
-  last_read_message_id String?
   conversations        conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
   messages             messages?     @relation(fields: [last_read_message_id], references: [id])
   users                users         @relation(fields: [user_id], references: [id], onDelete: Cascade)
@@ -120,28 +119,27 @@ model conversation_participants {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model conversations {
-  id                String    @id @default(uuid())
+  id                String    @id @default(uuid()) @db.Uuid
   name              String?   @db.VarChar(100)
   type              conversation_type_enum @default(private)
-  creator_id        String?
-  last_message_id   String?
+  creator_id        String?   @db.Uuid
+  last_message_id   String?   @db.Uuid
   created_at        DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+  updated_at        DateTime  @default(now()) @db.Timestamptz(6)
   conversation_participants conversation_participants[]
-  users             users?    @relation(fields: [creator_id], references: [id])
+  users             users?    @relation("conversations_creator_idTousers", fields: [creator_id], references: [id])
   messages_conversations_last_message_idTomessages messages? @relation("conversations_last_message_idTomessages", fields: [last_message_id], references: [id])
   messages_messages_conversation_idToconversations messages[] @relation("messages_conversation_idToconversations")
 
   @@index([creator_id], map: "idx_conversations_creator")
-  @@index([type], map: "idx_conversations_type")
   @@index([created_at], map: "idx_conversations_created")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model follows {
-  follower_id  String
-  following_id String
+  follower_id  String   @db.Uuid
+  following_id String   @db.Uuid
   created_at   DateTime @default(now()) @db.Timestamptz(6)
   users_follows_follower_idTousers  users @relation("follows_follower_idTousers", fields: [follower_id], references: [id], onDelete: Cascade)
   users_follows_following_idTousers users @relation("follows_following_idTousers", fields: [following_id], references: [id], onDelete: Cascade)
@@ -153,24 +151,23 @@ model follows {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model likes {
-  id          String    @id @default(uuid())
-  user_id     String
-  target_type like_target_type_enum
-  target_id   String
+  id          String    @id @default(uuid()) @db.Uuid
+  user_id     String    @db.Uuid
+  target_id   String    @db.Uuid
   created_at  DateTime  @default(now()) @db.Timestamptz(6)
   users       users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@unique([user_id, target_type, target_id])
-  @@index([target_type, target_id], map: "idx_likes_target")
+  @@unique([user_id, target_id])
+  @@index([target_id], map: "idx_likes_target")
   @@index([user_id], map: "idx_likes_user")
   @@index([created_at], map: "idx_likes_created")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model messages {
-  id                String    @id @default(uuid())
-  conversation_id   String
-  sender_id         String
+  id                String    @id @default(uuid()) @db.Uuid
+  conversation_id   String    @db.Uuid
+  sender_id         String    @db.Uuid
   content           String    @db.Text
   message_type      message_type_enum @default(text)
   created_at        DateTime  @default(now()) @db.Timestamptz(6)
@@ -182,17 +179,15 @@ model messages {
   @@index([conversation_id], map: "idx_messages_conversation")
   @@index([sender_id], map: "idx_messages_sender")
   @@index([created_at], map: "idx_messages_created")
-  @@index([message_type], map: "idx_messages_type")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model notifications {
-  id           String    @id @default(uuid())
-  recipient_id String
-  actor_id     String?
+  id           String    @id @default(uuid()) @db.Uuid
+  recipient_id String    @db.Uuid
+  actor_id     String?   @db.Uuid
   action_type  String    @db.VarChar(50)
-  target_type  String?   @db.VarChar(50)
-  target_id    String?
+  target_id    String?   @db.Uuid
   content      String?   @db.Text
   is_read      Boolean   @default(false)
   read_at      DateTime? @db.Timestamptz(6)
@@ -202,22 +197,24 @@ model notifications {
 
   @@index([actor_id], map: "idx_notifications_actor")
   @@index([recipient_id, is_read, created_at(sort: Desc)], map: "idx_notifications_recipient_read_created")
-  @@index([target_type, target_id], map: "idx_notifications_target")
+  @@index([target_id], map: "idx_notifications_target")
   @@index([created_at], map: "idx_notifications_created")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model order_items {
-  id                String    @id @default(uuid())
-  order_id          String
-  product_id        String
+  id                String    @id @default(uuid()) @db.Uuid
+  order_id          String    @db.Uuid
+  product_id        String    @db.Uuid
   quantity          Int
   price_at_purchase Decimal   @db.Decimal(12, 2)
   product_name      String    @db.VarChar(255)
   created_at        DateTime  @default(now()) @db.Timestamptz(6)
   order             orders    @relation(fields: [order_id], references: [id], onDelete: Cascade)
   product           products  @relation(fields: [product_id], references: [id])
+  menu_item_id      String?   @db.Uuid
+  menu_item         menu_items? @relation(fields: [menu_item_id], references: [id])
 
   @@index([order_id], map: "idx_order_items_order")
   @@index([product_id], map: "idx_order_items_product")
@@ -226,40 +223,39 @@ model order_items {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model order_status_history {
-  id                 String    @id @default(uuid())
-  order_id           String
+  id                 String    @id @default(uuid()) @db.Uuid
+  order_id           String    @db.Uuid
   status             order_status_enum
-  changed_by_user_id String?
+  changed_by_user_id String?   @db.Uuid
   notes              String?   @db.Text
   created_at         DateTime  @default(now()) @db.Timestamptz(6)
   users              users?    @relation(fields: [changed_by_user_id], references: [id])
   orders             orders    @relation(fields: [order_id], references: [id], onDelete: Cascade)
 
   @@index([order_id], map: "idx_order_status_history_order")
-  @@index([status], map: "idx_order_status_history_status")
   @@index([created_at], map: "idx_order_status_history_created")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model orders {
-  id                  String    @id @default(uuid())
-  user_id             String
+  id                  String    @id @default(uuid()) @db.Uuid
+  user_id             String    @db.Uuid
   order_code          String    @unique @db.VarChar(20)
   total_amount        Decimal   @db.Decimal(14, 2)
   shipping_fee        Decimal   @default(0) @db.Decimal(10, 2)
   discount_amount     Decimal   @default(0) @db.Decimal(10, 2)
   final_amount        Decimal   @db.Decimal(14, 2)
-  shipping_address_id String?
-  billing_address_id  String?
+  shipping_address_id String?   @db.Uuid
+  billing_address_id  String?   @db.Uuid
   status              order_status_enum      @default(pending)
   payment_method      String?                @db.VarChar(50)
   payment_status      payment_status_enum    @default(pending)
-  delivery_person_id  String?
+  delivery_person_id  String?   @db.Uuid
   notes               String?                @db.Text
-  affiliate_user_id   String?
+  affiliate_user_id   String?   @db.Uuid
   created_at          DateTime               @default(now()) @db.Timestamptz(6)
-  updated_at          DateTime               @updatedAt @db.Timestamptz(6)
+  updated_at          DateTime               @default(now()) @db.Timestamptz(6)
   affiliate_stats     affiliate_stats?
   order_items         order_items[]
   order_status_history order_status_history[]
@@ -268,21 +264,13 @@ model orders {
   users_orders_delivery_person_idTousers          users?    @relation("orders_delivery_person_idTousers", fields: [delivery_person_id], references: [id])
   addresses_orders_shipping_address_idToaddresses addresses? @relation("orders_shipping_address_idToaddresses", fields: [shipping_address_id], references: [id])
   users_orders_user_idTousers                     users     @relation("orders_user_idTousers", fields: [user_id], references: [id])
-  course_payments                                  course_payments[]
-
-  @@index([user_id], map: "idx_orders_user")
-  @@index([status], map: "idx_orders_status")
-  @@index([payment_status], map: "idx_orders_payment_status")
-  @@index([created_at], map: "idx_orders_created_at")
-  @@index([affiliate_user_id], map: "idx_orders_affiliate")
-  @@index([delivery_person_id], map: "idx_orders_delivery")
-  @@index([order_code], map: "idx_orders_code")
+  voucher_usages                   voucher_usages[]
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model post_categories {
-  post_id     String
-  category_id Int
+  post_id     String   @db.Uuid
+  category_id String   @db.Uuid
   categories  categories @relation(fields: [category_id], references: [id], onDelete: Cascade)
   post        posts     @relation(fields: [post_id], references: [id], onDelete: Cascade)
 
@@ -292,8 +280,8 @@ model post_categories {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model post_tags {
-  post_id String
-  tag_id  Int
+  post_id String   @db.Uuid
+  tag_id  String   @db.Uuid
   post    posts  @relation(fields: [post_id], references: [id], onDelete: Cascade)
   tags    tags   @relation(fields: [tag_id], references: [id], onDelete: Cascade)
 
@@ -303,8 +291,8 @@ model post_tags {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model posts {
-  id                String    @id @default(uuid())
-  author_id         String
+  id                String    @id @default(uuid()) @db.Uuid
+  author_id         String    @db.Uuid
   post_type         post_type_enum    @default(social)
   title             String?         @db.VarChar(255)
   content           String
@@ -321,14 +309,12 @@ model posts {
   users             users             @relation(fields: [author_id], references: [id], onDelete: Cascade)
 
   @@index([author_id])
-  @@index([post_type])
-  @@index([slug])
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model product_categories {
-  product_id  String
-  category_id Int
+  product_id  String   @db.Uuid
+  category_id String   @db.Uuid
   categories  categories @relation(fields: [category_id], references: [id], onDelete: Cascade)
   product     products  @relation(fields: [product_id], references: [id], onDelete: Cascade)
 
@@ -338,8 +324,8 @@ model product_categories {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model product_images {
-  id            String    @id @default(uuid())
-  product_id    String
+  id            String    @id @default(uuid()) @db.Uuid
+  product_id    String    @db.Uuid
   image_url     String
   alt_text      String?  @db.VarChar(255)
   display_order Int      @default(0)
@@ -350,8 +336,8 @@ model product_images {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model product_tags {
-  product_id String
-  tag_id     Int
+  product_id String   @db.Uuid
+  tag_id     String   @db.Uuid
   product    products @relation(fields: [product_id], references: [id], onDelete: Cascade)
   tags       tags    @relation(fields: [tag_id], references: [id], onDelete: Cascade)
 
@@ -362,8 +348,8 @@ model product_tags {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model products {
-  id                 String    @id @default(uuid())
-  seller_id          String
+  id                 String    @id @default(uuid()) @db.Uuid
+  seller_id          String    @db.Uuid
   name               String    @db.VarChar(255)
   description        String?
   sku                String?   @unique @db.VarChar(100)
@@ -386,10 +372,10 @@ model products {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model projects {
-  id                String    @id @default(uuid())
+  id                String    @id @default(uuid()) @db.Uuid
   name              String    @db.VarChar(255)
   description       String?
-  owner_id          String
+  owner_id          String    @db.Uuid
   created_at        DateTime  @default(now()) @db.Timestamptz(6)
   updated_at        DateTime  @default(now()) @db.Timestamptz(6)
   users             users     @relation(fields: [owner_id], references: [id], onUpdate: NoAction)
@@ -399,8 +385,134 @@ model projects {
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model restaurant_chains {
+  id          String     @id @default(uuid()) @db.Uuid
+  name        String     @db.VarChar(100)
+  description String?
+  created_at  DateTime   @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime   @default(now()) @db.Timestamptz(6)
+  restaurants restaurants[]
+  owner_id    String     @db.Uuid
+  users       users      @relation("restaurant_chains_owner_idTousers", fields: [owner_id], references: [id])
+
+  @@index([owner_id], map: "idx_restaurant_chains_owner")
+}
+
+/// Tổ chức/chuỗi lớn (organization)
+model organizations {
+  id          String     @id @default(uuid()) @db.Uuid
+  name        String     @db.VarChar(100)
+  code        String     @unique @db.VarChar(30)
+  description String?
+  owner_id    String     @db.Uuid
+  owner       users      @relation("organizations_owner_idTousers", fields: [owner_id], references: [id])
+  created_at  DateTime   @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime   @default(now()) @db.Timestamptz(6)
+  restaurants restaurants[]
+
+  @@index([owner_id], map: "idx_organizations_owner")
+}
+
+model restaurants {
+  id                   String              @id @default(uuid()) @db.Uuid
+  organization_id      String              @db.Uuid
+  chain_id             String?             @db.Uuid
+  code                 String              @db.VarChar(30)
+  name                 String              @db.VarChar(100)
+  address              String              @db.VarChar(255)
+  phone_number         String?             @db.VarChar(20)
+  description          String?
+  created_at           DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime            @default(now()) @db.Timestamptz(6)
+  organizations        organizations       @relation(fields: [organization_id], references: [id])
+  restaurant_chains    restaurant_chains?  @relation(fields: [chain_id], references: [id])
+  menus                menus[]
+  manager_id           String?             @db.Uuid
+  manager              users?              @relation("restaurants_manager_idTousers", fields: [manager_id], references: [id])
+  inventory_items      inventory_items[]
+  vouchers             vouchers[]
+  logistics_orders_from logistics_orders[]  @relation("logistics_orders_from")
+  logistics_orders_to   logistics_orders[]  @relation("logistics_orders_to")
+  restaurant_staffs     restaurant_staffs[]
+
+  @@unique([organization_id, code], map: "uq_restaurant_org_code")
+  @@index([organization_id], map: "idx_restaurants_organization")
+  @@index([chain_id], map: "idx_restaurants_chain")
+  @@index([manager_id], map: "idx_restaurants_manager")
+}
+
+/// Menu của nhà hàng
+model menus {
+  id            String        @id @default(uuid()) @db.Uuid
+  restaurant_id String        @db.Uuid
+  name          String        @db.VarChar(100)
+  description   String?
+  is_active     Boolean       @default(true)
+  created_at    DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime      @default(now()) @db.Timestamptz(6)
+  restaurants   restaurants   @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+  menu_items    menu_items[]
+
+  @@index([restaurant_id], map: "idx_menus_restaurant")
+}
+
+/// Món ăn/đồ uống trong menu
+model menu_items {
+  id            String      @id @default(uuid()) @db.Uuid
+  menu_id       String      @db.Uuid
+  name          String     @db.VarChar(255)
+  description   String?
+  price         Decimal    @db.Decimal(12, 2)
+  image_url     String?
+  is_available  Boolean    @default(true)
+  created_at    DateTime   @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime   @default(now()) @db.Timestamptz(6)
+  menus         menus      @relation(fields: [menu_id], references: [id], onDelete: Cascade)
+  order_items   order_items[]
+  category_id   String?    @db.Uuid
+  categories    categories? @relation(fields: [category_id], references: [id])
+  recipes       recipes[]
+
+  @@index([menu_id], map: "idx_menu_items_menu")
+  @@index([category_id], map: "idx_menu_items_category")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model restaurant_staffs {
+  id            String    @id @default(uuid()) @db.Uuid
+  restaurant_id String    @db.Uuid
+  user_id       String    @db.Uuid
+  role          restaurant_staff_role_enum
+  status        staff_status_enum   @default(active)
+  joined_at     DateTime  @default(now()) @db.Timestamptz(6)
+  left_at       DateTime?
+  restaurants   restaurants @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+  users         users       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([restaurant_id, user_id], map: "uq_restaurant_staff")
+  @@index([user_id], map: "idx_restaurant_staff_user")
+  @@index([role], map: "idx_restaurant_staff_role")
+}
+
+enum restaurant_staff_role_enum {
+  staff
+  manager
+  chef
+  cashier
+  security
+  cleaner
+}
+
+enum staff_status_enum {
+  active
+  inactive
+  suspended
+  left
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model roles {
-  id          Int          @id @default(autoincrement())
+  id          String       @id @default(uuid()) @db.Uuid
   name        String       @unique @db.VarChar(50)
   description String?
   user_roles  user_roles[]
@@ -408,7 +520,7 @@ model roles {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model tags {
-  id           Int            @id @default(autoincrement())
+  id           String      @id @default(uuid()) @db.Uuid
   name         String         @unique @db.VarChar(50)
   slug         String         @unique @db.VarChar(60)
   post_tags    post_tags[]
@@ -417,8 +529,8 @@ model tags {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model task_assignments {
-  task_id String
-  user_id String
+  task_id String   @db.Uuid
+  user_id String   @db.Uuid
   tasks   tasks  @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   users   users  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
@@ -428,13 +540,13 @@ model task_assignments {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model tasks {
-  id                String    @id @default(uuid())
-  creator_id        String
-  assignee_id       String?
-  project_id        String?
+  id                String    @id @default(uuid()) @db.Uuid
+  creator_id        String    @db.Uuid
+  assignee_id       String?   @db.Uuid
+  project_id        String?   @db.Uuid
   title             String    @db.VarChar(255)
   description       String?
-  status            task_status_enum   @default(toDo)
+  status            task_status_enum   @default(to_do)
   priority          task_priority_enum @default(medium)
   due_date          DateTime?          @db.Date
   created_at        DateTime         @default(now()) @db.Timestamptz(6)
@@ -448,13 +560,12 @@ model tasks {
   @@index([assignee_id], map: "idx_tasks_assignee_id")
   @@index([creator_id], map: "idx_tasks_creator_id")
   @@index([project_id], map: "idx_tasks_project_id")
-  @@index([status], map: "idx_tasks_status")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model user_roles {
-  user_id String
-  role_id Int
+  user_id String   @db.Uuid
+  role_id String   @db.Uuid
   roles   roles  @relation(fields: [role_id], references: [id], onUpdate: NoAction)
   users   users  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
@@ -464,313 +575,202 @@ model user_roles {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model users {
-  id                String    @id @default(uuid())
+  id                String    @id @default(uuid()) @db.Uuid
   username          String    @unique @db.VarChar(50)
   email             String    @unique @db.VarChar(255)
   password_hash     String    @db.VarChar(255)
-  full_name         String    @db.VarChar(200)
   first_name        String    @db.VarChar(100)
   last_name         String    @db.VarChar(100)
-  role              user_role_enum  @default(user)
-  status            user_status_enum @default(active)
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
-  last_login_at     DateTime?
-  user_profiles     user_profiles?
-  sessions          sessions[]
-  courses           courses[]
-  enrollments       enrollments[]
-  progress          progress[]
-  course_payments   course_payments[]
-  subscriptions     subscriptions[]
-  ai_interactions   ai_interactions[]
-  user_analytics    user_analytics[]
-  addresses         addresses[]
-  affiliate_stats   affiliate_stats[]
-  cart_items        cart_items[]
-  comments          comments[]
-  conversation_participants conversation_participants[]
-  conversations     conversations[]
-  follows_follows_follower_idTousers follows[]                   @relation("follows_follower_idTousers")
-  follows_follows_following_idTousers follows[]                   @relation("follows_following_idTousers")
-  likes             likes[]
-  messages          messages[]
-  notifications_notifications_actor_idTousers notifications[]             @relation("notifications_actor_idTousers")
-  notifications_notifications_recipient_idTousers notifications[]             @relation("notifications_recipient_idTousers")
-  order_status_history order_status_history[]
-  orders_orders_affiliate_user_idTousers orders[]                    @relation("orders_affiliate_user_idTousers")
-  orders_orders_delivery_person_idTousers orders[]                    @relation("orders_delivery_person_idTousers")
-  orders_orders_user_idTousers orders[]                    @relation("orders_user_idTousers")
-  posts             posts[]
-  products          products[]
-  projects          projects[]
-  task_assignments  task_assignments[]
-  tasks_tasks_assignee_idTousers tasks[]                     @relation("tasks_assignee_idTousers")
-  tasks_tasks_creator_idTousers tasks[]                     @relation("tasks_creator_idTousers")
-  user_roles        user_roles[]
+  full_name         String    @db.VarChar(200)
+  phone_code        String?   @db.VarChar(8)
   phone_number      String?   @db.VarChar(20)
   avatar_url        String?   @db.VarChar(255)
   cover_url         String?   @db.VarChar(255)
   bio               String?   @db.Text
-  location          String?   @db.VarChar(100)
-  reviews           reviews[] @relation("UserReviews")
+  status            user_status_enum @default(active)
+  role              user_role_enum   @default(user)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
 
-  @@index([email], map: "idx_users_email")
-  @@index([username], map: "idx_users_username")
-  @@index([role])
-  @@index([status])
-  @@index([created_at])
+  // --- RELATIONS ---
+  addresses                        addresses[]
+  affiliate_stats                  affiliate_stats[]
+  cart_items                       cart_items[]
+  comments                         comments[]
+  conversation_participants        conversation_participants[]
+  conversations_created            conversations[]        @relation("conversations_creator_idTousers")
+  follows_follower                 follows[]              @relation("follows_follower_idTousers")
+  follows_following                follows[]              @relation("follows_following_idTousers")
+  likes                            likes[]
+  messages_sent                    messages[]
+  notifications_actor              notifications[]        @relation("notifications_actor_idTousers")
+  notifications_recipient          notifications[]        @relation("notifications_recipient_idTousers")
+  order_status_history_changed     order_status_history[]
+  orders_affiliate                 orders[]               @relation("orders_affiliate_user_idTousers")
+  orders_delivery                  orders[]               @relation("orders_delivery_person_idTousers")
+  orders_user                      orders[]               @relation("orders_user_idTousers")
+  posts                            posts[]
+  products                         products[]
+  projects_owned                   projects[]
+  sessions                         sessions[]
+  task_assignments                 task_assignments[]
+  tasks_assignee                   tasks[]                @relation("tasks_assignee_idTousers")
+  tasks_creator                    tasks[]                @relation("tasks_creator_idTousers")
+  user_roles                       user_roles[]
+  // --- NEW RELATIONS ---
+  voucher_usages                   voucher_usages[]
+  // --- RELATIONS FOR RESTAURANT/ORGANIZATION ---
+  restaurant_chains_owned          restaurant_chains[]        @relation("restaurant_chains_owner_idTousers")
+  organizations_owned              organizations[]            @relation("organizations_owner_idTousers")
+  restaurants_managed              restaurants[]              @relation("restaurants_manager_idTousers")
+  restaurant_staffs                restaurant_staffs[]
 }
 
-model user_profiles {
-  id                String    @id @default(uuid())
-  user_id           String    @unique
-  user              users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  avatar            String?
-  bio              String?
-  phone            String?
-  address          String?
-  preferences      Json?
-  created_at       DateTime  @default(now())
-  updated_at       DateTime  @updatedAt
+/// Nguyên vật liệu/kho của nhà hàng
+model inventory_items {
+  id            String      @id @default(uuid()) @db.Uuid
+  restaurant_id String      @db.Uuid
+  name          String      @db.VarChar(100)
+  description   String?
+  unit          String      @db.VarChar(20) // đơn vị: kg, lít, cái...
+  quantity      Decimal     @db.Decimal(12, 2)
+  min_quantity  Decimal?    @db.Decimal(12, 2)
+  max_quantity  Decimal?    @db.Decimal(12, 2)
+  created_at    DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime    @default(now()) @db.Timestamptz(6)
+  restaurants   restaurants @relation(fields: [restaurant_id], references: [id])
+  inventory_transactions inventory_transactions[]
+  recipe_ingredients              recipe_ingredients[]
+  logistics_order_items           logistics_order_items[]
+
+  @@index([restaurant_id], map: "idx_inventory_items_restaurant")
 }
 
+/// Lịch sử nhập/xuất kho
+model inventory_transactions {
+  id               String         @id @default(uuid()) @db.Uuid
+  inventory_item_id String        @db.Uuid
+  type             inventory_transaction_type_enum
+  quantity         Decimal        @db.Decimal(12, 2)
+  note             String?
+  created_at       DateTime       @default(now()) @db.Timestamptz(6)
+  inventory_items  inventory_items @relation(fields: [inventory_item_id], references: [id])
+
+  @@index([inventory_item_id], map: "idx_inventory_transactions_item")
+}
+
+/// Công thức chế biến món ăn
+model recipes {
+  id           String      @id @default(uuid()) @db.Uuid
+  menu_item_id String      @db.Uuid
+  name         String      @db.VarChar(100)
+  description  String?
+  created_at   DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime    @default(now()) @db.Timestamptz(6)
+  menu_items   menu_items  @relation(fields: [menu_item_id], references: [id])
+  recipe_ingredients recipe_ingredients[]
+
+  @@index([menu_item_id], map: "idx_recipes_menu_item")
+}
+
+/// Thành phần nguyên liệu cho công thức
+model recipe_ingredients {
+  id              String          @id @default(uuid()) @db.Uuid
+  recipe_id       String          @db.Uuid
+  inventory_item_id String        @db.Uuid
+  quantity        Decimal         @db.Decimal(12, 2)
+  unit            String          @db.VarChar(20)
+  recipes         recipes         @relation(fields: [recipe_id], references: [id])
+  inventory_items inventory_items @relation(fields: [inventory_item_id], references: [id])
+
+  @@index([recipe_id], map: "idx_recipe_ingredients_recipe")
+  @@index([inventory_item_id], map: "idx_recipe_ingredients_item")
+}
+
+/// Voucher/mã giảm giá
+model vouchers {
+  id             String      @id @default(uuid()) @db.Uuid
+  code           String      @unique @db.VarChar(50)
+  description    String?
+  discount_type  voucher_discount_type_enum
+  discount_value Decimal     @db.Decimal(12, 2)
+  min_order_value Decimal?   @db.Decimal(12, 2)
+  max_discount   Decimal?    @db.Decimal(12, 2)
+  start_date     DateTime    @db.Timestamptz(6)
+  end_date       DateTime    @db.Timestamptz(6)
+  usage_limit    Int?
+  used_count     Int         @default(0)
+  is_active      Boolean     @default(true)
+  restaurant_id  String?     @db.Uuid
+  restaurants    restaurants? @relation(fields: [restaurant_id], references: [id])
+  voucher_usages voucher_usages[]
+
+  @@index([restaurant_id], map: "idx_vouchers_restaurant")
+}
+
+/// Lịch sử sử dụng voucher
+model voucher_usages {
+  id         String     @id @default(uuid()) @db.Uuid
+  voucher_id String     @db.Uuid
+  user_id    String     @db.Uuid
+  order_id   String?    @db.Uuid
+  used_at    DateTime   @default(now()) @db.Timestamptz(6)
+  vouchers   vouchers   @relation(fields: [voucher_id], references: [id])
+  users      users      @relation(fields: [user_id], references: [id])
+  orders     orders?    @relation(fields: [order_id], references: [id])
+
+  @@index([voucher_id], map: "idx_voucher_usages_voucher")
+  @@index([user_id], map: "idx_voucher_usages_user")
+}
+
+/// Đơn vận chuyển nguyên vật liệu giữa các nhà hàng/kho
+model logistics_orders {
+  id                String      @id @default(uuid()) @db.Uuid
+  from_restaurant_id String     @db.Uuid
+  to_restaurant_id   String     @db.Uuid
+  status            logistics_order_status_enum @default(pending)
+  created_at        DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime    @default(now()) @db.Timestamptz(6)
+  logistics_order_items logistics_order_items[]
+  from_restaurant   restaurants @relation("logistics_orders_from", fields: [from_restaurant_id], references: [id])
+  to_restaurant     restaurants @relation("logistics_orders_to", fields: [to_restaurant_id], references: [id])
+
+  @@index([from_restaurant_id], map: "idx_logistics_orders_from")
+  @@index([to_restaurant_id], map: "idx_logistics_orders_to")
+}
+
+/// Chi tiết từng nguyên vật liệu trong đơn vận chuyển
+model logistics_order_items {
+  id                 String           @id @default(uuid()) @db.Uuid
+  logistics_order_id String           @db.Uuid
+  inventory_item_id  String           @db.Uuid
+  quantity           Decimal          @db.Decimal(12, 2)
+  logistics_orders   logistics_orders @relation(fields: [logistics_order_id], references: [id])
+  inventory_items    inventory_items  @relation(fields: [inventory_item_id], references: [id])
+
+  @@index([logistics_order_id], map: "idx_logistics_order_items_order")
+  @@index([inventory_item_id], map: "idx_logistics_order_items_item")
+}
+/// Phiên đăng nhập/session cho xác thực JWT
 model sessions {
-  id                String    @id @default(uuid())
-  user_id           String
-  user              users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  token             String    @unique
-  is_valid          Boolean   @default(true)
-  expires_at        DateTime
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
+  id          String   @id @default(uuid()) @db.Uuid
+  user_id     String   @db.Uuid
+  is_valid    Boolean  @default(true)
+  expires_at  DateTime @db.Timestamptz(6)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+  token       String?   @db.Text
+  users       users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@index([user_id])
-  @@index([is_valid])
+  @@index([user_id], map: "idx_sessions_user")
+  @@index([expires_at], map: "idx_sessions_expires")
 }
 
-// Course and Learning Models
-model courses {
-  id                String    @id @default(uuid())
-  title             String    @db.VarChar(255)
-  slug              String    @unique @db.VarChar(255)
-  description       String    @db.Text
-  price             Decimal   @db.Decimal(10, 2)
-  discount_price    Decimal?  @db.Decimal(10, 2)
-  category          String    @db.VarChar(50)
-  level             course_level_enum
-  language          String    @db.VarChar(50)
-  instructor_id     String
-  instructor        users     @relation(fields: [instructor_id], references: [id])
-  status            course_status_enum @default(draft)
-  tags              String[]
-  thumbnail_url     String?   @db.VarChar(255)
-  preview_video_url String?   @db.VarChar(255)
-  duration          Int       // in minutes
-  total_lessons     Int       @default(0)
-  total_students    Int       @default(0)
-  average_rating    Float     @default(0)
-  total_reviews     Int       @default(0)
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
-  sections          sections[]
-  enrollments       enrollments[]
-  reviews           reviews[]
-  course_analytics  course_analytics?
-
-  @@index([instructor_id])
-  @@index([status])
-  @@index([category])
-  @@index([created_at])
-}
-
-model sections {
-  id                String    @id @default(uuid())
-  course_id         String
-  course            courses   @relation(fields: [course_id], references: [id], onDelete: Cascade)
-  title             String
-  description       String
-  order             Int
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
-  lessons           lessons[]
-}
-
-model lessons {
-  id                String    @id @default(uuid())
-  section_id        String
-  section           sections  @relation(fields: [section_id], references: [id], onDelete: Cascade)
-  title             String
-  description       String
-  content           String
-  video_url         String?
-  duration          Int       // in minutes
-  order             Int
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
-  progress          progress[]
-}
-
-model enrollments {
-  id                String    @id @default(uuid())
-  user_id           String
-  user              users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  course_id         String
-  course            courses   @relation(fields: [course_id], references: [id], onDelete: Cascade)
-  status            enrollment_status_enum @default(active)
-  progress          Float     @default(0)
-  started_at        DateTime  @default(now())
-  completed_at      DateTime?
-  last_accessed_at  DateTime?
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
-  payment           course_payments?
-
-  @@unique([user_id, course_id])
-  @@index([status])
-  @@index([progress])
-  @@index([created_at])
-}
-
-model progress {
-  id                String    @id @default(uuid())
-  user_id           String
-  user              users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  lesson_id         String
-  lesson            lessons   @relation(fields: [lesson_id], references: [id], onDelete: Cascade)
-  status            progress_status_enum @default(notStarted)
-  completed_at      DateTime?
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
-
-  @@unique([user_id, lesson_id])
-}
-
-// Payment and Subscription Models
-model course_payments {
-  id                String    @id @default(uuid())
-  user_id           String
-  user              users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  amount            Decimal   @db.Decimal(10, 2)
-  currency          String    @default("USD") @db.VarChar(3)
-  status            payment_status_enum @default(pending)
-  payment_method    String    @db.VarChar(50)
-  transaction_id    String?   @db.VarChar(100)
-  enrollment_id     String?   @unique
-  enrollment        enrollments? @relation(fields: [enrollment_id], references: [id])
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
-  order_id          String?
-  order             orders?   @relation(fields: [order_id], references: [id])
-
-  @@index([status])
-  @@index([created_at])
-}
-
-model subscriptions {
-  id                String    @id @default(uuid())
-  user_id           String
-  user              users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  plan              subscription_plan_enum
-  status            subscription_status_enum @default(active)
-  start_date        DateTime
-  end_date          DateTime
-  auto_renew        Boolean   @default(true)
-  amount            Decimal   @db.Decimal(10, 2)
-  currency          String    @default("USD") @db.VarChar(3)
-  payment_method    String    @db.VarChar(50)
-  transaction_id    String?   @db.VarChar(100)
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
-
-  @@index([status])
-  @@index([plan])
-  @@index([end_date])
-}
-
-// Review and Rating Models
-model reviews {
-  id                String    @id @default(uuid())
-  user_id           String
-  course_id         String
-  rating            Int       @db.SmallInt
-  comment           String?   @db.Text
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
-
-  // Relations
-  user              users     @relation("UserReviews", fields: [user_id], references: [id], onDelete: Cascade)
-  course            courses   @relation(fields: [course_id], references: [id], onDelete: Cascade)
-
-  @@unique([user_id, course_id])
-  @@index([rating])
-  @@index([created_at])
-}
-
-// AI and Analytics Models
-model ai_interactions {
-  id                String    @id @default(uuid())
-  user_id           String
-  user              users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  type              ai_interaction_type_enum
-  prompt            String    @db.Text
-  response          String    @db.Text
-  status            ai_interaction_status_enum @default(pending)
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
-
-  @@index([type])
-  @@index([status])
-  @@index([created_at])
-}
-
-model user_analytics {
-  id                String    @id @default(uuid())
-  user_id           String
-  user              users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  total_courses     Int       @default(0)
-  completed_courses Int       @default(0)
-  total_progress    Float     @default(0)
-  last_activity     DateTime?
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
-
-  @@index([total_courses])
-  @@index([completed_courses])
-  @@index([last_activity])
-}
-
-model course_analytics {
-  id                String    @id @default(uuid())
-  course_id         String    @unique
-  course            courses   @relation(fields: [course_id], references: [id], onDelete: Cascade)
-  total_enrollments Int       @default(0)
-  active_students   Int       @default(0)
-  completion_rate   Float     @default(0)
-  average_rating    Float     @default(0)
-  total_revenue     Decimal   @default(0) @db.Decimal(12, 2)
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
-
-  @@index([total_enrollments])
-  @@index([active_students])
-  @@index([completion_rate])
-  @@index([average_rating])
-  @@index([total_revenue])
-}
-
-// Enums
+/// --- ENUMS (snake_case) ---
 enum affiliate_status_enum {
   pending
   approved
   rejected
-  paid
-}
-
-enum comment_parent_type_enum {
-  post
-  product
-  task
 }
 
 enum conversation_type_enum {
@@ -778,36 +778,26 @@ enum conversation_type_enum {
   group
 }
 
-enum like_target_type_enum {
-  post
-  comment
-  product
-}
-
 enum message_type_enum {
   text
   image
+  video
   file
-  system
 }
 
 enum order_status_enum {
   pending
-  processing
-  pickup
-  dispatched
-  packageArrived
-  outForDelivery
-  delivered
+  confirmed
+  preparing
+  delivering
+  completed
   cancelled
-  returned
 }
 
 enum payment_status_enum {
   pending
-  paid
+  completed
   failed
-  refunded
 }
 
 enum post_type_enum {
@@ -819,14 +809,26 @@ enum task_priority_enum {
   low
   medium
   high
-  urgent
 }
 
 enum task_status_enum {
-  toDo
-  inProgress
-  done
+  to_do
+  in_progress
+  completed
+  on_hold
   cancelled
+}
+
+enum user_role_enum {
+  user
+  admin
+  moderator
+}
+
+enum user_status_enum {
+  active
+  inactive
+  banned
 }
 
 enum visibility_enum {
@@ -835,68 +837,20 @@ enum visibility_enum {
   private
 }
 
-enum user_role_enum {
-  admin
-  instructor
-  affiliate
-  user
-  buyer
-  seller
-  delivery
-  developer
+enum inventory_transaction_type_enum {
+  import
+  export
+  adjust
 }
 
-enum user_status_enum {
-  active
-  inactive
-  suspended
+enum voucher_discount_type_enum {
+  percent
+  fixed
 }
 
-enum course_status_enum {
-  draft
-  published
-  archived
-}
-
-enum course_level_enum {
-  beginner
-  intermediate
-  advanced
-}
-
-enum enrollment_status_enum {
-  active
-  completed
-  cancelled
-}
-
-enum progress_status_enum {
-  notStarted
-  inProgress
-  completed
-}
-
-enum subscription_plan_enum {
-  free
-  basic
-  premium
-}
-
-enum subscription_status_enum {
-  active
-  cancelled
-  expired
-}
-
-enum ai_interaction_type_enum {
-  chat
-  quiz
-  exercise
-  feedback
-}
-
-enum ai_interaction_status_enum {
+enum logistics_order_status_enum {
   pending
+  in_transit
   completed
-  failed
+  cancelled
 }
