@@ -10,7 +10,7 @@ export default function AuthLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
-  const [layout, setLayout] = useState(1);
+  const [layout] = useState(1);
 
   return (
     <>

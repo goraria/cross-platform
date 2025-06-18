@@ -12,6 +12,7 @@ const customBaseQuery = async (
 ) => {
   const baseQuery = fetchBaseQuery({
     baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+    credentials: "include",
     prepareHeaders: async (headers) => {
       // const token = await window.Clerk?.session?.getToken();
       // if (token) {
@@ -113,7 +114,7 @@ export const api = createApi({
   // baseQuery: customBaseQuery,
   baseQuery: fetchBaseQuery({
     baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
-    // credentials: 'include',
+    credentials: 'include',
     prepareHeaders: async (headers) => {
       // const session = await fetchAuthSession();
       // const { idToken } = session.tokens ?? {};
@@ -150,6 +151,12 @@ export const api = createApi({
       query: () => ({
         url: '/auth/logout',
         method: 'POST',
+      }),
+    }),
+    getMe: builder.query<User, void>({
+      query: () => ({
+        url: '/auth/me',
+        method: 'GET',
       }),
     }),
 
@@ -320,7 +327,11 @@ export const api = createApi({
 
 export const {
   useRegisterMutation,
+  useLoginMutation,
+  useRefreshTokenMutation,
+  useLogoutMutation,
   useGetUsersQuery,
+  useGetMeQuery,
   // useUpdateUserMutation,
   // useCreateCourseMutation,
   // useUpdateCourseMutation,

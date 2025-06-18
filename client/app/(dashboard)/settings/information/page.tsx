@@ -219,8 +219,19 @@ export default function InformationPage() {
               </div>
             </div>
             <div className="flex gap-3">
-              <Button type="submit">Save changes</Button>
-              <Button type="reset" variant="outline">Cancel</Button>
+              <Button 
+                type="submit"
+                className="cursor-pointer"
+              >
+                Save changes
+              </Button>
+              <Button 
+                type="reset" 
+                variant="outline"
+                className="cursor-pointer"
+              >
+                Cancel
+              </Button>
             </div>
           </form>
         </CardContent>
@@ -251,7 +262,7 @@ export default function InformationPage() {
               type="submit" 
               variant="destructive" 
               disabled
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto not-disabled:cursor-pointer"
             >
               Deactivate Account
             </Button>

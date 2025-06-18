@@ -12,6 +12,8 @@ export const createUser = async (data: RegisterInput) => {
 		username,
 		email,
 		password,
+		phone_number,
+		phone_code,
 	} = data;
 	// Check if user exists
 	const existUser = await prisma.users.findFirst({
@@ -38,6 +40,8 @@ export const createUser = async (data: RegisterInput) => {
 			full_name: `${first_name} ${last_name}`,
 			username,
 			email,
+			phone_number,
+			phone_code,
 			role: "user",
 			status: "inactive",
 			password_hash: passwordHash,
@@ -85,40 +89,40 @@ export const generateSign = async (
 			password_hash: true
 		}
 	});
-
+	console.log('generateSign DEBUG', { email, user });
 	if (!user) {
 		throw new UnauthorizedError('Invalid credentials');
 	}
 
 	// 2. Verify password
 	const isValidPassword = await bcrypt.compare(password, user.password_hash);
+	console.log('generateSign DEBUG', { password, password_hash: user.password_hash, isValidPassword });
 	if (!isValidPassword) {
 		throw new UnauthorizedError('Invalid credentials');
 	}
 
-	// 3. Generate tokens first
-  const { accessToken, refreshToken } = generateTokens(user.id, uuidv4());
+	// Sau khi xác thực đúng, tạo session mới
+	const sessionId = uuidv4();
+	const { accessToken, refreshToken } = generateTokens(user.id, sessionId);
+	const session = await prisma.sessions.create({
+		data: {
+			id: sessionId,
+			user_id: user.id,
+			token: accessToken,
+			expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+			is_valid: true
+		}
+	});
 
-  // 4. Create new session with the generated token
-  const session = await prisma.sessions.create({
-    data: {
-      id: uuidv4(),
-      user_id: user.id,
-      token: accessToken,
-      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      is_valid: true
-    }
-  });
-
-  return {
-    user: {
-      id: user.id,
-      email: user.email,
-      username: user.username
-    },
-    accessToken,
-    refreshToken
-  };
+	return {
+		user: {
+			id: user.id,
+			email: user.email,
+			username: user.username
+		},
+		accessToken,
+		refreshToken
+	};
 }
 
 export const refreshSign = async (refreshToken: string) => {
@@ -139,7 +143,7 @@ export const refreshSign = async (refreshToken: string) => {
 				}
 			},
 			include: {
-				user: {
+				users: {
 					select: {
 						id: true,
 						email: true,
@@ -154,10 +158,10 @@ export const refreshSign = async (refreshToken: string) => {
 		}
 
 		// 3. Generate new tokens
-		const tokens = generateTokens(session.user.id, session.id);
+		const tokens = generateTokens(session.users.id, session.id);
 
 		return {
-			user: session.user,
+			user: session.users,
 			...tokens
 		};
 	} catch (error) {

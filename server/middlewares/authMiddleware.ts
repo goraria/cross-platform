@@ -46,7 +46,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         }
       },
       include: {
-        user: {
+        users: {
           select: {
             id: true,
             email: true,
@@ -61,7 +61,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     }
 
     // 4. Attach user and session to request
-    req.user = session.user;
+    req.user = session.users;
     req.authSession = { id: session.id };
 
     next();

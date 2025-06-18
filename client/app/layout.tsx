@@ -11,7 +11,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/layout/theme-provider";
-import { Toaster } from "sonner";
+import { ToasterProvider } from "@/components/layout/toaster-provider";
 import Providers from "@/app/providers";
 import { ModeToggle } from "@/components/elements/mode-toggle";
 import { QuickSetting } from "@/components/elements/quick-setting";
@@ -57,7 +57,7 @@ export default function RootLayout({
             <ModeToggle
               className="absolute top-5 right-5"
             /> */}
-            <Toaster />
+            <ToasterProvider />
           </ThemeProvider>
         </Providers>
       </body>

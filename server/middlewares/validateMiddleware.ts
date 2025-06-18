@@ -4,34 +4,21 @@ import { AnyZodObject, ZodError } from "zod";
 
 export const validateMiddleware = (
   schema: AnyZodObject
-) => async (
+) => (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  try {
-    const result = schema.safeParse(req.body);
-    if (!result.success) {
-      return res.status(400).json({ 
-        message: 'Validation error',
-        errors: result.error.format() 
-      });
-    }
-    // replace body with parsed & typed data
-    req.body = result.data;
-    next();
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return res.status(400).json({
-        message: 'Validation error',
-        errors: error.format()
-      });
-    }
-  
-    return res.status(500).json({
-      message: 'Internal server error'
+  const result = schema.safeParse(req.body);
+  if (!result.success) {
+    res.status(400).json({ 
+      message: 'Validation error',
+      errors: result.error.format() 
     });
+    return next(); // Đảm bảo luôn trả về void, không return Response
   }
+  req.body = result.data;
+  next();
 };
 
 export const validateSafely = (

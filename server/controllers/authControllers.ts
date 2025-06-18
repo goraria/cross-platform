@@ -51,36 +51,57 @@ export const cookieToken: RequestHandler = async (
   res.json({ user: updatedSafeUser });
 };
 
-export const me: RequestHandler = async (req: AuthRequest, res) => {
-  // const user = await prisma.users.findUnique({
-  //   where: { id: Number(req.userId) },
-  //   select: { id: true, email: true, full_name: true },
-  // });
-  // res.json({ user });
+export const me = (req: AuthRequest, res: Response): void => {
+  // Lấy userId từ middleware authRequire
+  if (!req.userId) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+  prisma.users.findUnique({
+    where: { id: req.userId },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      first_name: true,
+      last_name: true,
+      full_name: true,
+      avatar_url: true,
+      status: true,
+      role: true
+    }
+  }).then(user => {
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+    res.json({ user });
+  }).catch(() => {
+    res.status(500).json({ message: "Internal server error" });
+  });
 };
 
 export const login: RequestHandler = async (
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<any> => {
+) => {
   try {
     const { email, password } = req.body;
-
     const result = await generateSign(email, password);
 
     // Set cookies
     res.cookie('access_token', result.accessToken, {
       httpOnly: true,
       secure: process.env.EXPRESS_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax', // Đổi từ 'strict' sang 'lax' để cookie hoạt động khi FE/BE khác port
       maxAge: 15 * 60 * 1000 // 15 minutes
     });
 
     res.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
       secure: process.env.EXPRESS_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax', // Đổi từ 'strict' sang 'lax' để cookie hoạt động khi FE/BE khác port
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
@@ -88,6 +109,7 @@ export const login: RequestHandler = async (
       user: result.user,
       message: 'Login successful'
     });
+    return;
   } catch (error) {
     next(error);
   }
@@ -130,15 +152,15 @@ export const register: RequestHandler = async (
   next: NextFunction
 ) => {
   try {
-    const error = registerSchema.parse(req.body);
-    
-    if (error) {
+    const result = registerSchema.safeParse(req.body);
+    if (!result.success) {
       res.status(400).json({
         success: false,
-        message: 'Validation error'
+        message: 'Validation error',
+        errors: result.error.format()
       });
+      return;
     }
-
     const {
       first_name,
       last_name,
@@ -146,7 +168,8 @@ export const register: RequestHandler = async (
       email,
       password,
       phone_number,
-    } = req.body;
+      phone_code,
+    } = result.data;
     // Check if user exists
     const existUser = await prisma.users.findFirst({
       where: {
@@ -156,21 +179,18 @@ export const register: RequestHandler = async (
         ]
       }
     })
-
     if (existUser) {
-      // throw new Error('User already exists')
       if (existUser.username === username) {
-        res.status(400).json({ message: 'Email already exists' })
-      } else if (existUser.email === email) {
         res.status(400).json({ message: 'Username already exists' })
+      } else if (existUser.email === email) {
+        res.status(400).json({ message: 'Email already exists' })
       } else {
         res.status(400).json({ message: 'User already exists' })
       }
+      return;
     }
-
     const salt = await bcrypt.genSalt();
     const passwordHash = await bcrypt.hash(password, salt);
-
     const newUser = await prisma.users.create({
       data: {
         id: uuidv4(),
@@ -180,18 +200,50 @@ export const register: RequestHandler = async (
         username,
         email,
         phone_number,
+        phone_code,
         role: "user",
         status: "inactive",
         password_hash: passwordHash,
-        // viewed_profile: 0,
-        // impressions: 0,
         created_at: new Date(),
         updated_at: new Date(),
       }
     });
-
-    // const savedUser = await newUser.save();
-    res.status(201).json(newUser);
+    // Tự động đăng nhập sau khi đăng ký
+    const sessionId = uuidv4();
+    const { accessToken, refreshToken } = require("@/services/authServices").generateTokens(newUser.id, sessionId);
+    await prisma.sessions.create({
+      data: {
+        id: sessionId,
+        user_id: newUser.id,
+        token: accessToken,
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        is_valid: true
+      }
+    });
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: process.env.EXPRESS_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000
+    });
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: process.env.EXPRESS_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+    res.status(201).json({
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        username: newUser.username,
+        first_name: newUser.first_name,
+        last_name: newUser.last_name
+      },
+      message: 'Register & login successful',
+      accessToken,
+      refreshToken
+    });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
