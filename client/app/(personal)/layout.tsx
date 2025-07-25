@@ -13,7 +13,7 @@ export default function PersonalLayout({ children }: { children: ReactNode }) {
           </div>
         </section>
         <div className="container-wrapper">
-          <div className="container p-6">
+          <div className="p-6">{/* container */}
             {children}
           </div>
         </div>

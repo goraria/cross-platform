@@ -1,12 +1,16 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
+import { motion } from "framer-motion";
+import { usePathname } from "next/navigation";
 import Link from "next/link"
-import { ArchiveX, ChevronRight, File, Inbox, type LucideIcon, Send, Trash2 } from "lucide-react";
+import {
+  type LucideIcon,
+  ChevronRight,
+} from "lucide-react";
 
 import {
   Collapsible,
-  CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import {
@@ -16,123 +20,133 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
+  // SidebarMenuSubButton,
+  // SidebarMenuSubItem,
   useSidebar
 } from "@/components/ui/sidebar";
 
-const data = {
-  user: {
-    name: "Japtor",
-    email: "japtor@gorth.org",
-    avatar: "/avatars/waddles.jpeg",
-  },
-  item: [
-    {
-      title: "Inbox",
-      url: "/message",
-      icon: Inbox,
-      isActive: true,
-    },
-    {
-      title: "Drafts",
-      url: "/message/drafts",
-      icon: File,
-      isActive: false,
-    },
-    {
-      title: "Sent",
-      url: "/message/sent",
-      icon: Send,
-      isActive: false,
-    },
-    {
-      title: "Junk",
-      url: "/message/junk",
-      icon: ArchiveX,
-      isActive: false,
-    },
-    {
-      title: "Trash",
-      url: "/message/trash",
-      icon: Trash2,
-      isActive: false,
-    },
-  ],
+interface NavMainItem {
+  title: string;
+  url: string;
+  icon?: LucideIcon;
+  isActive?: boolean;
+  items?: {
+    title: string;
+    url: string;
+  }[];
 }
 
-export function NavMain({
-  items,
-}: {
-  items: {
-    title: string
-    url: string
-    icon?: LucideIcon
-    isActive?: boolean
-    items?: {
-      title: string
-      url: string
-    }[]
-  }[]
-}) {
-  const [activeItem, setActiveItem] = useState(data.item[0])
-  const { setOpen } = useSidebar()
+interface NavMainProps {
+  items: NavMainItem[];
+}
 
+export function NavMain({ items }: NavMainProps) {
+  const { setOpen } = useSidebar();
+  const pathname = usePathname();
+  // const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  // Helper to check if a menu or submenu is active by current route
+  const isMenuActive = (item: NavMainItem) => {
+    if (item.url !== "#" && pathname === item.url) return true;
+    if (item.items) {
+      return item.items.some((sub: { url: string }) => sub.url !== "#" && pathname === sub.url);
+    }
+    return false;
+  };
+  const isSubMenuActive = (item: { url: string }, parent: NavMainItem) => {
+    return item.url !== "#" && pathname === item.url;
+  };
+
+  // useEffect(() => {
+  //   const idx = items.findIndex((item: NavMainItem) => isMenuActive(item));
+  //   setOpenIndex(idx !== -1 ? idx : null);
+  // }, [pathname, items]);
+
+  // Tính toán nav mở mặc định ngay từ lần render đầu tiên
+  const getDefaultOpenIndex = React.useCallback(() => {
+    return items.findIndex((item: NavMainItem) => isMenuActive(item));
+  }, [items, pathname]);
+  const [openIndex, setOpenIndex] = useState<number | null>(() => {
+    const idx = getDefaultOpenIndex();
+    return idx !== -1 ? idx : null;
+  });
+
+  // Đồng bộ openIndex khi pathname hoặc items thay đổi (nếu cần)
+  useEffect(() => {
+    const idx = getDefaultOpenIndex();
+    setOpenIndex(idx !== -1 ? idx : null);
+  }, [getDefaultOpenIndex]);
+
+  // Hiển thị hiệu ứng cho tất cả nav đang hiển thị (có items), không chỉ nav đang active
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
       <SidebarMenu>
-        {items.map((item) => (
-          <Collapsible
-            key={item.title}
-            asChild
-            defaultOpen={item.isActive}
-            className="group/collapsible"
-          >
-            <SidebarMenuItem>
-              <CollapsibleTrigger asChild>
-                <SidebarMenuButton tooltip={item.title}>
-                  {item.icon && <item.icon />}
-                  <span>{item.title}</span>
-                  <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                </SidebarMenuButton>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarMenuSub>
-                  {item.items?.map((subItem) => (
-                    <SidebarMenuItem key={subItem.title}>
-                      <SidebarMenuButton
-                        tooltip={{
-                          children: subItem.title,
-                          hidden: false,
-                        }}
-                        onClick={() => {
-                          // setActiveItem(subItem)
-                          setOpen(true);
-                        }}
-                        isActive={activeItem?.title === item.title}
-                        className="px-2.5 md:px-2"
-                      >
-                        <Link href={subItem.url}>
-                          {/* {subItem.icon && <subItem.icon />} */}
-                          <span>{subItem.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-
-                      {/*<SidebarMenuSubItem key={subItem.title}>*/}
-                      {/*  <SidebarMenuSubButton asChild>*/}
-                      {/*    <Link href={subItem.url}>*/}
-                      {/*      <span>{subItem.title}</span>*/}
-                      {/*    </Link>*/}
-                      {/*  </SidebarMenuSubButton>*/}
-                      {/*</SidebarMenuSubItem>*/}
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenuSub>
-              </CollapsibleContent>
-            </SidebarMenuItem>
-          </Collapsible>
-        ))}
+        {items.map((item: NavMainItem, idx: number) => {
+          const isOpen = openIndex === idx;
+          const hasSubMenu = Array.isArray(item.items) && item.items.length > 0;
+          return (
+            <Collapsible
+              key={item.title}
+              asChild
+              open={isOpen}
+              onOpenChange={(open: boolean) => setOpenIndex(open ? idx : null)}
+              className="group/collapsible"
+            >
+              <SidebarMenuItem>
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton
+                    tooltip={item.title}
+                    isActive={isMenuActive(item)}
+                  >
+                    {item.icon && <item.icon />}
+                    <span>{item.title}</span>
+                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <motion.div
+                  initial={false}
+                  animate={{
+                    height: isOpen && hasSubMenu ? "auto" : 0,
+                    opacity: isOpen && hasSubMenu ? 1 : 0,
+                  }}
+                  transition={{ 
+                    duration: 0.3, 
+                    ease: "easeInOut",
+                    height: { type: "tween", duration: 0.3 },
+                    opacity: { duration: 0.2, delay: isOpen ? 0.1 : 0 }
+                  }}
+                  style={{ 
+                    overflow: "hidden"
+                  }}
+                >
+                  {hasSubMenu && (
+                    <SidebarMenuSub>
+                      {item.items?.map((subItem: { title: string; url: string }) => (
+                        <SidebarMenuItem key={subItem.title}>
+                          <SidebarMenuButton
+                            tooltip={{
+                              children: subItem.title,
+                              hidden: false,
+                            }}
+                            onClick={() => {
+                              setOpen(true);
+                            }}
+                            isActive={isSubMenuActive(subItem, item)}
+                          >
+                            <Link href={subItem.url}>
+                              <span>{subItem.title}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenuSub>
+                  )}
+                </motion.div>
+              </SidebarMenuItem>
+            </Collapsible>
+          );
+        })}
       </SidebarMenu>
     </SidebarGroup>
   );

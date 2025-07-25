@@ -28,7 +28,7 @@ export default function ProfilePage() {
           <img
             src="/backgrounds/profile-banner.png"
             alt="Banner image"
-            className="rounded-top"
+            className="rounded-top w-full"
           />
         </div>
         <div className="user-profile-header flex flex-column flex-lg-row text-sm-start text-center mb-6">

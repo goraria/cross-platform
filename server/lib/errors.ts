@@ -40,3 +40,28 @@ export class ConflictError extends BaseError {
     super(message, 409, 'CONFLICT');
   }
 }
+
+export class ValidationError extends BaseError {
+  constructor(message: string = 'Validation Error', public errors?: any) {
+    super(message, 422, 'VALIDATION_ERROR');
+    this.errors = errors;
+  }
+}
+
+export class RateLimitError extends BaseError {
+  constructor(message: string = 'Rate limit exceeded') {
+    super(message, 429, 'RATE_LIMIT_EXCEEDED');
+  }
+}
+
+export class TokenExpiredError extends BaseError {
+  constructor(message: string = 'Token expired') {
+    super(message, 401, 'TOKEN_EXPIRED');
+  }
+}
+
+export class AccountInactiveError extends BaseError {
+  constructor(message: string = 'Account is inactive') {
+    super(message, 403, 'ACCOUNT_INACTIVE');
+  }
+}
