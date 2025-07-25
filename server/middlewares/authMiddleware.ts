@@ -2,8 +2,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import prisma from '@config/prisma';
-import { UnauthorizedError } from '@/lib/errors';
-// import { UnauthorizedError } from '../utils/errors';
+import { UnauthorizedError, TokenExpiredError, AccountInactiveError } from '@/lib/errors';
+import { validateSession } from '@/services/authServices';
 
 interface JwtPayload {
   userId: string;
@@ -34,43 +34,32 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     }
 
     // 2. Verify JWT token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
-    
-    // 3. Check if session exists and is valid
-    const session = await prisma.sessions.findUnique({
-      where: {
-        id: decoded.sessionId,
-        is_valid: true,
-        expires_at: {
-          gt: new Date()
-        }
-      },
-      include: {
-        users: {
-          select: {
-            id: true,
-            email: true,
-            username: true
-          }
-        }
+    let decoded: JwtPayload;
+    try {
+      decoded = jwt.verify(token, process.env.EXPRESS_JWT_SECRET!) as JwtPayload;
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        throw new TokenExpiredError('Access token expired');
+      } else if (error instanceof jwt.JsonWebTokenError) {
+        throw new UnauthorizedError('Invalid token');
       }
-    });
-
-    if (!session) {
-      throw new UnauthorizedError('Invalid session');
+      throw error;
     }
+    
+    // 3. Validate session using utility function
+    const session = await validateSession(decoded.sessionId);
 
     // 4. Attach user and session to request
-    req.user = session.users;
+    req.user = {
+      id: session.users.id,
+      email: session.users.email,
+      username: session.users.username
+    };
     req.authSession = { id: session.id };
 
     next();
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      next(new UnauthorizedError('Invalid token'));
-    } else {
-      next(error);
-    }
+    next(error);
   }
 };
 

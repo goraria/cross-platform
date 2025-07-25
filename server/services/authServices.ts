@@ -26,10 +26,17 @@ export const createUser = async (data: RegisterInput) => {
 	})
 
 	if (existUser) {
-		throw new Error('User already exists')
+		if (existUser.username === username) {
+			throw new Error('Username already exists')
+		} else if (existUser.email === email) {
+			throw new Error('Email already exists')
+		} else {
+			throw new Error('User already exists')
+		}
 	}
 
-	const salt = await bcrypt.genSalt();
+	// Generate stronger salt
+	const salt = await bcrypt.genSalt(12);
 	const passwordHash = await bcrypt.hash(password, salt);
 
 	const newUser = await prisma.users.create({
@@ -43,7 +50,7 @@ export const createUser = async (data: RegisterInput) => {
 			phone_number,
 			phone_code,
 			role: "user",
-			status: "inactive",
+			status: "active", // Đổi thành active thay vì inactive
 			password_hash: passwordHash,
 			// viewed_profile: 0,
 			// impressions: 0,
@@ -86,30 +93,36 @@ export const generateSign = async (
 			id: true,
 			email: true,
 			username: true,
-			password_hash: true
+			password_hash: true,
+			status: true
 		}
 	});
-	console.log('generateSign DEBUG', { email, user });
+	
 	if (!user) {
 		throw new UnauthorizedError('Invalid credentials');
 	}
 
-	// 2. Verify password
+	// 2. Check if user is active
+	if (user.status !== 'active') {
+		throw new UnauthorizedError('Account is not active');
+	}
+
+	// 3. Verify password
 	const isValidPassword = await bcrypt.compare(password, user.password_hash);
-	console.log('generateSign DEBUG', { password, password_hash: user.password_hash, isValidPassword });
 	if (!isValidPassword) {
 		throw new UnauthorizedError('Invalid credentials');
 	}
 
-	// Sau khi xác thực đúng, tạo session mới
+	// 4. Create session with metadata
 	const sessionId = uuidv4();
 	const { accessToken, refreshToken } = generateTokens(user.id, sessionId);
+	
 	const session = await prisma.sessions.create({
 		data: {
 			id: sessionId,
 			user_id: user.id,
 			token: accessToken,
-			expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+			expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
 			is_valid: true
 		}
 	});
@@ -128,7 +141,7 @@ export const generateSign = async (
 export const refreshSign = async (refreshToken: string) => {
 	try {
 		// 1. Verify refresh token
-		const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as {
+		const decoded = jwt.verify(refreshToken, process.env.EXPRESS_JWT_REFRESH_SECRET!) as {
 			userId: string;
 			sessionId: string;
 		};
@@ -147,7 +160,8 @@ export const refreshSign = async (refreshToken: string) => {
 					select: {
 						id: true,
 						email: true,
-						username: true
+						username: true,
+						status: true
 					}
 				}
 			}
@@ -157,15 +171,36 @@ export const refreshSign = async (refreshToken: string) => {
 			throw new UnauthorizedError('Invalid session');
 		}
 
-		// 3. Generate new tokens
+		// 3. Check if user is still active
+		if (session.users.status !== 'active') {
+			throw new UnauthorizedError('Account is not active');
+		}
+
+		// 4. Generate new tokens
 		const tokens = generateTokens(session.users.id, session.id);
 
+		// 5. Update session with new token
+		await prisma.sessions.update({
+			where: { id: session.id },
+			data: { 
+				token: tokens.accessToken,
+				updated_at: new Date()
+			}
+		});
+
 		return {
-			user: session.users,
+			user: {
+				id: session.users.id,
+				email: session.users.email,
+				username: session.users.username
+			},
 			...tokens
 		};
 	} catch (error) {
-		throw new UnauthorizedError('Invalid refresh token');
+		if (error instanceof jwt.JsonWebTokenError) {
+			throw new UnauthorizedError('Invalid refresh token');
+		}
+		throw error;
 	}
 }
 
@@ -174,4 +209,74 @@ export const logoutSign = async (sessionId: string) => {
 		where: { id: sessionId },
 		data: { is_valid: false }
 	});
+}
+
+// Utility function để cleanup expired sessions
+export const cleanupExpiredSessions = async () => {
+	const result = await prisma.sessions.deleteMany({
+		where: {
+			OR: [
+				{ expires_at: { lt: new Date() } },
+				{ is_valid: false }
+			]
+		}
+	});
+	return result.count;
+}
+
+// Utility function để revoke tất cả sessions của user
+export const revokeAllUserSessions = async (userId: string) => {
+	await prisma.sessions.updateMany({
+		where: { user_id: userId },
+		data: { is_valid: false }
+	});
+}
+
+// Utility function để get active sessions của user
+export const getUserActiveSessions = async (userId: string) => {
+	return await prisma.sessions.findMany({
+		where: {
+			user_id: userId,
+			is_valid: true,
+			expires_at: { gt: new Date() }
+		},
+		select: {
+			id: true,
+			created_at: true,
+			updated_at: true,
+			expires_at: true
+		},
+		orderBy: { created_at: 'desc' }
+	});
+}
+
+// Utility function để validate session
+export const validateSession = async (sessionId: string) => {
+	const session = await prisma.sessions.findUnique({
+		where: {
+			id: sessionId,
+			is_valid: true,
+			expires_at: { gt: new Date() }
+		},
+		include: {
+			users: {
+				select: {
+					id: true,
+					email: true,
+					username: true,
+					status: true
+				}
+			}
+		}
+	});
+
+	if (!session) {
+		throw new UnauthorizedError('Invalid session');
+	}
+
+	if (session.users.status !== 'active') {
+		throw new UnauthorizedError('Account is not active');
+	}
+
+	return session;
 }
