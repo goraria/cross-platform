@@ -1,6 +1,6 @@
 // import 'module-alias/register';
 
-import express, { NextFunction, Request, Response } from 'express';
+import express from 'express';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import bodyParser from 'body-parser';
@@ -14,19 +14,19 @@ import mongoose from "mongoose";
 import { fileURLToPath } from "node:url";
 import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
-import { ApolloServer } from '@apollo/server';
-import { expressMiddleware } from '@apollo/server/express4';
-import { gql } from 'graphql-tag';
-import prisma from '@config/prisma';
+import { ApolloServer, BaseContext, HeaderMap } from '@apollo/server';
+import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
+import prisma from '@/config/prisma';
 
 /* ROUTE IMPORTS */
-import authRoutes from "@routes/authRoutes";
-import productRoutes from "@routes/productRoutes";
-import postRoutes from "@routes/postRoutes";
-import taskRoutes from "@routes/taskRoutes";
-import userRoutes from "@routes/userRoutes";
-import managerRoutes from "@routes/managerRoutes";
-import inventoryRoutes from "@routes/inventoryRoutes";
+import authRoutes from "@/routes/authRoutes";
+import productRoutes from "@/routes/productRoutes";
+import postRoutes from "@/routes/postRoutes";
+import taskRoutes from "@/routes/taskRoutes";
+import userRoutes from "@/routes/userRoutes";
+import managerRoutes from "@/routes/managerRoutes";
+import inventoryRoutes from "@/routes/inventoryRoutes";
+import { csrfProtect, issueCsrfToken } from '@/middlewares/csrfMiddleware';
 
 import { connectDB } from "@config/database";
 
@@ -34,6 +34,8 @@ import { connectDB } from "@config/database";
 dotenv.config();
 
 const app = express();
+// Disable ETag for dynamic API responses to avoid 304 on auth/me
+app.set('etag', false);
 app.use(express.json());
 app.use(helmet());
 app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
@@ -66,6 +68,12 @@ app.use(cors({
   ],
   credentials: true,
 }));
+
+// CSRF token issue endpoint (GET only)
+app.get('/csrf-token', issueCsrfToken);
+
+// Apply CSRF protection for all state-changing routes after this point
+app.use((req, res, next) => csrfProtect(req, res, next));
 
 /* STATIC FILES */
 /* UPLOAD MULTER CONFIG */
@@ -120,8 +128,8 @@ app.get('/', (
 
 // connectDB();
 
-const server = http.createServer(app);
-const io = new SocketIOServer(server, {
+const httpServer = http.createServer(app);
+const io = new SocketIOServer(httpServer, {
   cors: {
     origin: [
       process.env.EXPRESS_CLIENT_URL!,
@@ -153,10 +161,10 @@ export { io };
 
 const port = process.env.EXPRESS_PORT || 8080;
 
-server.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-  console.log(`Environment: ${process.env.EXPRESS_ENV}`);
-});
+// server.listen(port, () => {
+//   console.log(`Server is running on http://localhost:${port}`);
+//   console.log(`Environment: ${process.env.EXPRESS_ENV}`);
+// });
 
 // Xử lý tắt server an toàn (graceful shutdown) - tùy chọn
 process.on('SIGINT', () => {
@@ -172,7 +180,8 @@ process.on('SIGTERM', () => {
 });
 
 // --- GraphQL Schema Demo ---
-const typeDefs = `
+// Có thể tách riêng ra file schema + resolvers sau
+const typeDefs = `#graphql
   type User {
     id: String!
     username: String!
@@ -195,22 +204,95 @@ const typeDefs = `
     users: [User!]!
   }
 `;
+
+interface GraphQLContext extends BaseContext {
+  prisma: typeof prisma;
+  token: string | null;
+}
+
 const resolvers = {
   Query: {
     hello: () => 'Hello from GraphQL!',
     users: async () => {
       return await prisma.users.findMany();
     },
+    // users: async (_: unknown, __: unknown, ctx: GraphQLContext) => {
+    //   return ctx.prisma.users.findMany();
   },
 };
 
 async function startApolloServer() {
-  const apolloServer = new ApolloServer({ typeDefs, resolvers });
+  const apolloServer = new ApolloServer<GraphQLContext>({
+    typeDefs,
+    resolvers,
+    plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+  });
   await apolloServer.start();
-  app.use('/graphql', expressMiddleware(apolloServer) as any);
+
+  // Tự viết handler thay vì @apollo/server/express4
+  const graphqlCors = cors({
+    origin: [
+      process.env.EXPRESS_CLIENT_URL!,
+      process.env.EXPRESS_MOBILE_URL!,
+    ],
+    credentials: true,
+  });
+  const jsonBody = bodyParser.json({ limit: '50mb' });
+
+  app.use('/graphql', graphqlCors, jsonBody, async (req, res) => {
+    try {
+      const headers = new HeaderMap();
+      for (const [key, value] of Object.entries(req.headers)) {
+        if (value !== undefined) {
+          headers.set(key, Array.isArray(value) ? value.join(', ') : value);
+        }
+      }
+      const httpGraphQLRequest = {
+        method: req.method?.toUpperCase() || 'GET',
+        headers,
+        search: req.url && req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '',
+        body: (req as any).body,
+      };
+      const authHeader = req.headers.authorization || '';
+      const token = authHeader.startsWith('Bearer ')
+        ? authHeader.substring(7)
+        : authHeader || null;
+
+      const ctx: GraphQLContext = { prisma, token };
+      const httpGraphQLResponse = await apolloServer.executeHTTPGraphQLRequest({
+        httpGraphQLRequest,
+        context: async () => ctx,
+      });
+
+      for (const [key, value] of httpGraphQLResponse.headers) {
+        res.setHeader(key, value);
+      }
+      res.status(httpGraphQLResponse.status || 200);
+
+      if (httpGraphQLResponse.body.kind === 'complete') {
+        res.send(httpGraphQLResponse.body.string);
+        return;
+      }
+      // incremental delivery / streaming
+      for await (const chunk of httpGraphQLResponse.body.asyncIterator) {
+        res.write(chunk);
+      }
+      res.end();
+    } catch (e: any) {
+      console.error('GraphQL execution error:', e);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
 }
 
-startApolloServer();
+(async () => {
+  await startApolloServer();
+  httpServer.listen(port, () => {
+    console.log(`Server (HTTP + GraphQL) running at http://localhost:${port}`);
+    console.log(`GraphQL endpoint: http://localhost:${port}/graphql`);
+    console.log(`Environment: ${process.env.EXPRESS_ENV}`);
+  });
+})();
 
 // mongoose.connect(process.env.MONGODB_URI!, {
 //

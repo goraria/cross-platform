@@ -13,10 +13,7 @@ export const loginLimiter = rateLimit({
 	legacyHeaders: false,
 	// Skip successful requests
 	skipSuccessfulRequests: true,
-	// Custom key generator để track theo IP + email
-	keyGenerator: (req: Request) => {
-		return `${req.ip}:${req.body.email || 'anonymous'}`;
-	}
+	// If you need per-email limiting, consider a secondary in-memory counter outside express-rate-limit
 });
 
 // Rate limiting cho registration
@@ -53,4 +50,17 @@ export const passwordResetLimiter = rateLimit({
 	},
 	standardHeaders: true,
 	legacyHeaders: false
+});
+
+// Rate limiting for sending email verification (per IP)
+export const emailVerificationLimiter = rateLimit({
+	windowMs: 60 * 60 * 1000, // 1 hour
+	max: 5, // 5 email sends per hour per IP
+	message: {
+		error: 'Too many verification email requests',
+		message: 'Please try again later'
+	},
+	standardHeaders: true,
+	legacyHeaders: false,
+	skipSuccessfulRequests: false
 });

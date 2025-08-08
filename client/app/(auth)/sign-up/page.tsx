@@ -1,26 +1,37 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 // import { cn } from "@/lib/utils";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { BoxIcon } from "@/components/elements/box-icon";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { RegisterInput } from "@/constants/schemas";
-import { registerSchema } from "@/constants/schemas";
+import { RegisterInput, registerSchema } from "@/schemas/authSchemas";
+import { z } from "zod";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
-import { useRegisterMutation } from "@/state/api";
+import { useRegisterMutation, useGetMeQuery } from "@/state/api";
 import { toast } from "sonner";
 import { Eye, EyeClosed } from "lucide-react";
+import DirectingPage from "@/app/(misc)/directing/page";
+import LoadingPage from "@/app/(misc)/loading/page";
+
+type RegisterFormValues = z.input<typeof registerSchema>;
 
 export default function SignUpPage() {
   const router = useRouter();
+  // Nếu đã đăng nhập thì chuyển khỏi trang sign-up
+  const { data: meResp, isLoading: meLoading } = useGetMeQuery();
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[SignUp] effect', { meLoading, meResp });
+    }
+    if (!meLoading && meResp?.authenticated && meResp.data) router.replace('/profile');
+  }, [meLoading, meResp, router]);
 
   const [register, { isLoading }] = useRegisterMutation();
   const [showPassword, setShowPassword] = useState(false);
@@ -28,75 +39,71 @@ export default function SignUpPage() {
 
   const {
     register: registerField,
-    handleSubmit,
-    formState: { errors, isValid, isDirty },
+    formState: { errors },
     reset,
-    watch
-  } = useForm<RegisterInput>({
+    watch,
+    handleSubmit,
+    setValue
+  } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     mode: "onChange",
     defaultValues: {
+      first_name: "",
+      last_name: "",
       username: "",
       email: "",
       phone_number: "",
+      phone_code: "+84",
       password: "",
       confirm_password: "",
-      first_name: "",
-      last_name: ""
+      terms_accepted: false,
+      newsletter_subscription: false
     }
   });
 
-  const onSubmit = async (data: RegisterInput) => {
+  const onSubmit = async (data: RegisterFormValues) => {
     try {
-      const result = await register(data).unwrap();
+      const parsed: RegisterInput = registerSchema.parse(data);
+      await register(parsed).unwrap();
       reset();
       toast.success("Registration successful");
       router.push("/sign-in");
-    } catch (error: any) {
-      // console.log("Register error:", error);
-      toast.error(error.data?.message || "Registration failed");
-      // toast.error("Japtor");
+    } catch (error: unknown) {
+      let message = "Registration failed";
+      if (typeof error === 'object' && error !== null) {
+        const anyErr = error as Record<string, unknown> & { message?: string; data?: { message?: string } };
+        message = anyErr.data?.message || anyErr.message || message;
+      }
+      toast.error(message);
     }
   };
 
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // console.log("Form submitted directly");
-    
-    // Lấy tất cả giá trị form  
-    const formData = {
-      username: watch("username"),
-      email: watch("email"),
-      phone_number: watch("phone_number"),
-      password: watch("password"),
-      confirm_password: watch("confirm_password"),
-      first_name: watch("first_name"),
-      last_name: watch("last_name")
-    };
-    
-    // console.log("Form data:", formData);
-    
-    // Validate form data
-    const result = registerSchema.safeParse(formData);
-    if (!result.success) {
-      toast.error("Validation errors!");
-      // console.log("Validation errors:", result.error);
-      return;
-    }
-    
-    // Submit form
-    await onSubmit(result.data);
-  };
+  // Auto ensure phone_code stays +84 if user changes anything (in case future UI adds selector)
+  React.useEffect(() => {
+    const sub = watch((value, { name }) => {
+      if (name === 'phone_code' && value.phone_code !== '+84') {
+        setValue('phone_code', '+84');
+      }
+    });
+    return () => sub.unsubscribe();
+  }, [watch, setValue]);
+
+  if (meLoading) {
+    return (
+      <LoadingPage />
+    );
+  }
+
+  if (!meLoading && meResp?.authenticated && meResp.data) {
+    return (
+      <DirectingPage />
+    );
+  }
 
   return (
     <>
       <form 
-        onSubmit={handleFormSubmit}
-        // onSubmit={handleSubmit(onSubmit)}
-        // onSubmit={(e) => {
-        //   e.preventDefault();
-        //   handleSubmit(onSubmit)(e);
-        // }}
+        onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col gap-6"
         noValidate
       >
@@ -129,17 +136,14 @@ export default function SignUpPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-3">
               <div className="flex items-center">
-                <Label htmlFor="firstname">First name</Label>
-                <span className="ml-auto inline-block text-muted-foreground text-xs underline-offset-4">
-                  Optional
-                </span>
+                <Label htmlFor="firstname">First name <span className="text-red-500">*</span></Label>
               </div>
               <Input
                 id="firstname"
                 type="text"
                 placeholder="Japtor"
                 {...registerField("first_name")}
-                // required
+                required
               />
               {errors.first_name && (
                 <p className="text-sm text-red-500">{errors.first_name.message}</p>
@@ -147,17 +151,14 @@ export default function SignUpPage() {
             </div>
             <div className="grid gap-3">
               <div className="flex items-center">
-                <Label htmlFor="lastname">Last name</Label>
-                <span className="ml-auto inline-block text-muted-foreground text-xs underline-offset-4">
-                  Optional
-                </span>
+                <Label htmlFor="lastname">Last name <span className="text-red-500">*</span></Label>
               </div>
               <Input
                 id="lastname"
                 type="text"
                 placeholder="Gorthenburg"
                 {...registerField("last_name")}
-                // required
+                required
               />
               {errors.last_name && (
                 <p className="text-sm text-red-500">{errors.last_name.message}</p>
@@ -165,7 +166,7 @@ export default function SignUpPage() {
             </div>
           </div>
           <div className="grid gap-3">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username">Username <span className="text-red-500">*</span></Label>
             <Input
               id="username"
               type="username"
@@ -178,7 +179,7 @@ export default function SignUpPage() {
             )}
           </div>
           <div className="grid gap-3">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
             <Input
               id="email"
               type="email"
@@ -219,22 +220,10 @@ export default function SignUpPage() {
             />
           </div> */}
           <div className="grid gap-3">
-            <Label htmlFor="phoneNumber">Phone Number</Label>
+            <Label htmlFor="phoneNumber">Phone Number <span className="text-red-500">*</span></Label>
             <div className="flex">
-              <Select defaultValue="us">
-                <SelectTrigger className="w-[120px] rounded-r-none border-r-0">
-                  <SelectValue placeholder="Code" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="vn">VN (+84)</SelectItem>
-                  <SelectItem value="us">US (+1)</SelectItem>
-                  <SelectItem value="uk">UK (+44)</SelectItem>
-                  <SelectItem value="de">DE (+49)</SelectItem>
-                  <SelectItem value="fr">FR (+33)</SelectItem>
-                  <SelectItem value="jp">JP (+81)</SelectItem>
-                  <SelectItem value="cn">CN (+86)</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-center w-[120px] rounded-l-md border border-input bg-muted text-sm font-medium">+84</div>
+              <input type="hidden" value={watch("phone_code") || "+84"} {...registerField("phone_code")} />
               <Input
                 id="phoneNumber"
                 className="rounded-l-none"
@@ -247,7 +236,7 @@ export default function SignUpPage() {
             )}
           </div>
           <div className="grid gap-3">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
             <div className="flex">
               <Input
                 id="password"
@@ -272,7 +261,7 @@ export default function SignUpPage() {
             )}
           </div>
           <div className="grid gap-3">
-            <Label htmlFor="confirm_password">Confirm password</Label>
+            <Label htmlFor="confirm_password">Confirm password <span className="text-red-500">*</span></Label>
             <div className="flex">
               <Input
                 id="confirm_password"
@@ -295,7 +284,20 @@ export default function SignUpPage() {
               <p className="text-sm text-red-500">{errors.confirm_password.message}</p>
             )}
           </div>
-          <div className="flex flex-col gap-3">
+          <div className="grid gap-4">
+            <div className="flex items-start gap-2">
+              <Checkbox id="terms_accepted" checked={watch("terms_accepted")} onCheckedChange={(v) => setValue("terms_accepted", Boolean(v))} />
+              <Label htmlFor="terms_accepted" className="text-sm leading-snug">Tôi đồng ý với <Link href="/terms-of-service" className="underline underline-offset-4">Điều khoản sử dụng</Link> và <Link href="/privacy-policy" className="underline underline-offset-4">Chính sách bảo mật</Link> <span className="text-red-500">*</span></Label>
+            </div>
+            {errors.terms_accepted && (
+              <p className="text-sm text-red-500">{errors.terms_accepted.message as string}</p>
+            )}
+            <div className="flex items-start gap-2">
+              <Checkbox id="newsletter_subscription" checked={watch("newsletter_subscription") || false} onCheckedChange={(v) => setValue("newsletter_subscription", Boolean(v))} />
+              <Label htmlFor="newsletter_subscription" className="text-sm leading-snug">Nhận bản tin cập nhật sản phẩm</Label>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 pt-2">
             {/* <Button type="submit" className="w-full">
               Register
             </Button> */}

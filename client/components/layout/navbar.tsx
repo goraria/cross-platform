@@ -37,6 +37,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { QuickSetting } from "@/components/elements/quick-setting";
 import { ModeToggle } from "@/components/elements/mode-toggle";
 import { Separator } from "@/components/ui/separator";
+import { useLogoutMutation } from "@/state/api";
+import { useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
+import { logout as logoutAction } from "@/store/slices/userSlice";
+import { toast } from "sonner";
 
 const user = {
   name: "japtor",
@@ -48,11 +53,32 @@ const navigation = [
   { name: "Contact", href: "/contact" },
   { name: "About Us", href: "/about" },
   { name: "Pages", href: "/pages" },
-  { name: "Components", href: "/components" },
+  { name: "Components", href: "/manager" },
 ]
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false)
+  const [logoutApi, { isLoading: isLoggingOut }] = useLogoutMutation();
+  const router = useRouter();
+  const dispatch = useDispatch();
+
+  const handleLogout = async () => {
+    try {
+      await logoutApi(undefined).unwrap();
+      toast.success("Logged out successfully");
+    } catch (e) {
+      // Even if API fails, continue clearing client state
+      let msg = 'Logout failed';
+      if (e && typeof e === 'object') {
+        const data = (e as { data?: { message?: string; error?: string }; message?: string }).data;
+        msg = data?.message || data?.error || (e as { message?: string }).message || msg;
+      }
+      toast.error(msg);
+    } finally {
+      dispatch(logoutAction());
+      router.push('/sign-in');
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -243,7 +269,7 @@ export const Navbar = () => {
                 <DropdownMenuGroup>
                   <DropdownMenuItem>
                     <BadgeCheck className="mr-2 h-4 w-4" />
-                    <Link href="/account">Account</Link>
+                    <Link href="/settings/information">Account</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
                     <CreditCard className="mr-2 h-4 w-4" />
@@ -259,9 +285,9 @@ export const Navbar = () => {
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut}>
                   <LogOut className="mr-2 h-4 w-4" />
-                  Log out
+                  {isLoggingOut ? 'Logging out...' : 'Log out'}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

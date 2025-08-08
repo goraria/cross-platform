@@ -3,7 +3,8 @@ import jwt from 'jsonwebtoken';
 import prisma from "@config/prisma";
 import { v4 as uuidv4 } from 'uuid';
 import { UnauthorizedError } from '@/lib/errors';
-import { RegisterInput } from '@/constants/schemas';
+import crypto from 'crypto';
+import { RegisterInput } from '@schemas/authSchemas';
 
 export const createUser = async (data: RegisterInput) => {
 	const {
@@ -26,13 +27,7 @@ export const createUser = async (data: RegisterInput) => {
 	})
 
 	if (existUser) {
-		if (existUser.username === username) {
-			throw new Error('Username already exists')
-		} else if (existUser.email === email) {
-			throw new Error('Email already exists')
-		} else {
-			throw new Error('User already exists')
-		}
+		throw new Error('User already exists'); // unified to prevent enumeration
 	}
 
 	// Generate stronger salt
@@ -63,9 +58,14 @@ export const createUser = async (data: RegisterInput) => {
 	return newUser;
 };
 
+// Hash utility for refresh token storage (Clerk/Facebook style – do not store plaintext)
+const hashToken = (token: string) =>
+	crypto.createHash('sha256').update(token).digest('hex');
+
 export const generateTokens = (
-	userId: string, 
-	sessionId: string
+	userId: string,
+	sessionId: string,
+	rememberMe: boolean = false
 ) => {
 	const accessToken = jwt.sign(
 		{ userId, sessionId },
@@ -73,22 +73,37 @@ export const generateTokens = (
 		{ expiresIn: '15m' }
 	);
 
+	const refreshExp = rememberMe ? '30d' : '7d';
 	const refreshToken = jwt.sign(
 		{ userId, sessionId },
 		process.env.EXPRESS_JWT_REFRESH_SECRET!,
-		{ expiresIn: '7d' }
+		{ expiresIn: refreshExp }
 	);
 
 	return { accessToken, refreshToken };
-} 
+};
+
+interface SessionContextMeta {
+	ip?: string;
+	userAgent?: string;
+}
 
 export const generateSign = async (
-	email: string, 
-	password: string
+	identifier: string,
+	password: string,
+	rememberMe: boolean = false,
+	meta: SessionContextMeta = {}
 ) => {
-	// 1. Find user
-	const user = await prisma.users.findUnique({
-		where: { email },
+	// Normalize identifier
+	let ident = (identifier || '').trim();
+	const isEmailLike = ident.includes('@');
+	if (isEmailLike) ident = ident.toLowerCase();
+
+	// 1. Find user by email OR username
+	const user = await prisma.users.findFirst({
+		where: {
+			OR: isEmailLike ? [ { email: ident } ] : [ { username: ident }, { email: ident.toLowerCase() } ]
+		},
 		select: {
 			id: true,
 			email: true,
@@ -97,7 +112,7 @@ export const generateSign = async (
 			status: true
 		}
 	});
-	
+
 	if (!user) {
 		throw new UnauthorizedError('Invalid credentials');
 	}
@@ -113,17 +128,21 @@ export const generateSign = async (
 		throw new UnauthorizedError('Invalid credentials');
 	}
 
-	// 4. Create session with metadata
+	// 4. Create session with metadata + refresh hash
 	const sessionId = uuidv4();
-	const { accessToken, refreshToken } = generateTokens(user.id, sessionId);
-	
-	const session = await prisma.sessions.create({
+	const { accessToken, refreshToken } = generateTokens(user.id, sessionId, rememberMe);
+
+	await prisma.sessions.create({
 		data: {
 			id: sessionId,
 			user_id: user.id,
 			token: accessToken,
-			expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-			is_valid: true
+			expires_at: new Date(Date.now() + (rememberMe ? 30 : 7) * 24 * 60 * 60 * 1000),
+			is_valid: true,
+			refresh_token_hash: hashToken(refreshToken),
+			ip_address: meta.ip,
+			user_agent: meta.userAgent,
+			last_accessed_at: new Date()
 		}
 	});
 
@@ -134,11 +153,12 @@ export const generateSign = async (
 			username: user.username
 		},
 		accessToken,
-		refreshToken
+		refreshToken,
+		sessionId
 	};
 }
 
-export const refreshSign = async (refreshToken: string) => {
+export const refreshSign = async (refreshToken: string, meta: SessionContextMeta = {}) => {
 	try {
 		// 1. Verify refresh token
 		const decoded = jwt.verify(refreshToken, process.env.EXPRESS_JWT_REFRESH_SECRET!) as {
@@ -146,47 +166,62 @@ export const refreshSign = async (refreshToken: string) => {
 			sessionId: string;
 		};
 
-		// 2. Check if session exists and is valid
+		// 2. Fetch session and verify validity + refresh hash
 		const session = await prisma.sessions.findUnique({
-			where: {
-				id: decoded.sessionId,
-				is_valid: true,
-				expires_at: {
-					gt: new Date()
-				}
-			},
+			where: { id: decoded.sessionId },
 			include: {
 				users: {
-					select: {
-						id: true,
-						email: true,
-						username: true,
-						status: true
-					}
+					select: { id: true, email: true, username: true, status: true }
 				}
 			}
 		});
 
-		if (!session) {
+		if (!session || !session.is_valid || !session.refresh_token_hash || session.expires_at < new Date()) {
 			throw new UnauthorizedError('Invalid session');
 		}
 
-		// 3. Check if user is still active
+		// 3. Compare provided refresh token hash (reuse detection)
+		const providedHash = hashToken(refreshToken);
+		if (providedHash !== session.refresh_token_hash) {
+			// Possible token reuse → revoke all sessions for user
+			await prisma.sessions.updateMany({
+				where: { user_id: session.user_id, is_valid: true },
+				data: { is_valid: false, revoked_at: new Date() }
+			});
+			throw new UnauthorizedError('Token reuse detected');
+		}
+
 		if (session.users.status !== 'active') {
 			throw new UnauthorizedError('Account is not active');
 		}
 
-		// 4. Generate new tokens
-		const tokens = generateTokens(session.users.id, session.id);
+		// 4. Rotate: create new session (new sessionId) and invalidate old
+		const newSessionId = uuidv4();
+		const { accessToken, refreshToken: newRefreshToken } = generateTokens(session.users.id, newSessionId);
 
-		// 5. Update session with new token
-		await prisma.sessions.update({
-			where: { id: session.id },
-			data: { 
-				token: tokens.accessToken,
-				updated_at: new Date()
-			}
-		});
+		await prisma.$transaction([
+			prisma.sessions.update({
+				where: { id: session.id },
+				data: {
+					is_valid: false,
+					revoked_at: new Date(),
+					replaced_by_session_id: newSessionId
+				}
+			}),
+			prisma.sessions.create({
+				data: {
+					id: newSessionId,
+					user_id: session.users.id,
+					token: accessToken,
+					expires_at: session.expires_at, // keep original horizon or extend? (keeping)
+					is_valid: true,
+					refresh_token_hash: hashToken(newRefreshToken),
+					ip_address: meta.ip,
+					user_agent: meta.userAgent,
+					last_accessed_at: new Date()
+				}
+			})
+		]);
 
 		return {
 			user: {
@@ -194,7 +229,9 @@ export const refreshSign = async (refreshToken: string) => {
 				email: session.users.email,
 				username: session.users.username
 			},
-			...tokens
+			accessToken,
+			refreshToken: newRefreshToken,
+			sessionId: newSessionId
 		};
 	} catch (error) {
 		if (error instanceof jwt.JsonWebTokenError) {
@@ -207,7 +244,7 @@ export const refreshSign = async (refreshToken: string) => {
 export const logoutSign = async (sessionId: string) => {
 	await prisma.sessions.update({
 		where: { id: sessionId },
-		data: { is_valid: false }
+		data: { is_valid: false, revoked_at: new Date() }
 	});
 }
 
@@ -253,30 +290,22 @@ export const getUserActiveSessions = async (userId: string) => {
 // Utility function để validate session
 export const validateSession = async (sessionId: string) => {
 	const session = await prisma.sessions.findUnique({
-		where: {
-			id: sessionId,
-			is_valid: true,
-			expires_at: { gt: new Date() }
-		},
+		where: { id: sessionId },
 		include: {
-			users: {
-				select: {
-					id: true,
-					email: true,
-					username: true,
-					status: true
-				}
-			}
+			users: { select: { id: true, email: true, username: true, status: true, role: true } }
 		}
 	});
 
-	if (!session) {
+	if (!session || !session.is_valid || session.expires_at < new Date()) {
 		throw new UnauthorizedError('Invalid session');
 	}
-
 	if (session.users.status !== 'active') {
 		throw new UnauthorizedError('Account is not active');
 	}
-
+	// touch last_accessed_at (fire and forget)
+	prisma.sessions.update({
+		where: { id: session.id },
+		data: { last_accessed_at: new Date() }
+	}).catch(() => {});
 	return session;
-}
+};

@@ -32,7 +32,7 @@ export default function ProfilePage() {
           />
         </div>
         <div className="user-profile-header flex flex-column flex-lg-row text-sm-start text-center mb-6">
-          <div className="shrink-0 mt-1 sm:mx-0 mx-auto">{/*flex-shrink-0 mt-1 mx-sm-0 mx-auto*/}
+          <div className="shrink-0 ms-6 mt-1 sm:mx-0 mx-auto">{/*flex-shrink-0 mt-1 mx-sm-0 mx-auto*/}
             {/*block h-auto ms-0 ms-sm-6 rounded-3 user-profile-img*/}
             <Avatar className="user-profile-img block h-[138px] w-[138px] mx-auto sm:mx-0 sm:ms-6 rounded-2xl">
               {/*<Avatar className="user-profile-img block h-auto ms-0 sm:ms-6 rounded-2xl">*/}

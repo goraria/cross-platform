@@ -1,26 +1,71 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+// Select removed (phone code fixed to +84)
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Upload, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
+import { useGetMeQuery, useUpdateProfileMutation } from "@/state/api";
+interface UserProfile {
+  id: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  username?: string;
+  phone_number?: string | null;
+  phone_code?: string | null;
+  bio?: string | null;
+  avatar_url?: string | null;
+  cover_url?: string | null;
+}
+import { toast } from "sonner";
 
 export default function InformationPage() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { data: meResp } = useGetMeQuery();
+  const me = meResp?.data as UserProfile | undefined;
+  const [updateProfile, { isLoading: saving }] = useUpdateProfileMutation();
+  interface FormState {
+    first_name: string;
+    last_name: string;
+    email: string;
+    username: string;
+    phone_number: string;
+    phone_code: string; // broaden type for select control
+    bio: string;
+  }
+  const [form, setForm] = useState<FormState>({
+    first_name: '',
+    last_name: '',
+    email: '',
+    username: '',
+    phone_number: '',
+    phone_code: '+84',
+    bio: ''
+  });
+
+  useEffect(() => {
+    if (me) {
+      setForm(f => ({
+        ...f,
+        first_name: me.first_name || '',
+        last_name: me.last_name || '',
+        email: me.email || '',
+        username: me.username || '',
+        phone_number: me.phone_number || '',
+        phone_code: me.phone_code || '+84',
+        bio: me.bio || ''
+      }));
+      if (me.avatar_url) setPreviewImage(me.avatar_url);
+    }
+  }, [me]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -46,6 +91,7 @@ export default function InformationPage() {
       fileInputRef.current.value = '';
     }
   };
+  const [confirmDeactivate, setConfirmDeactivate] = useState(false);
 
   return (
     <>
@@ -91,139 +137,103 @@ export default function InformationPage() {
           </div>
         </CardContent>
         <CardContent className="pt-6">
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={async e => {
+            e.preventDefault();
+            try {
+              // Build diff payload: only send changed non-empty fields
+              type DiffableKeys = keyof FormState | 'phone_code';
+              const payload: Partial<Record<DiffableKeys, string>> = {};
+              const original: Record<DiffableKeys, string> = {
+                first_name: me?.first_name || '',
+                last_name: me?.last_name || '',
+                email: me?.email || '',
+                username: me?.username || '',
+                phone_number: me?.phone_number || '',
+                phone_code: me?.phone_code || '+84',
+                bio: me?.bio || ''
+              };
+              // Always enforce Vietnam code +84 and normalize user input digits only
+              const cleanedPhone = form.phone_number.replace(/[^\d]/g,'');
+              const normalizedPhone = cleanedPhone.startsWith('0') ? cleanedPhone : (cleanedPhone ? '0'+cleanedPhone : '');
+              const working: Record<DiffableKeys,string> = {
+                ...form,
+                phone_number: normalizedPhone,
+                phone_code: '+84'
+              };
+              for (const [k,v] of Object.entries(working) as [DiffableKeys,string][]) {
+                if (v === '') continue; // skip empty
+                if (v !== original[k]) payload[k] = v;
+              }
+              if (previewImage && previewImage.startsWith('blob:')) {
+                // TODO: upload image to storage then set avatar_url
+              }
+              await updateProfile(payload).unwrap();
+              toast.success('Cập nhật thành công');
+            } catch (err: unknown) {
+              let msg = 'Cập nhật thất bại';
+              if (typeof err === 'object' && err) {
+                const maybeData = (err as Record<string, unknown>).data as Record<string, unknown> | undefined;
+                const errObj = maybeData && typeof maybeData === 'object' ? maybeData : undefined;
+                const nestedError = errObj && typeof errObj.error === 'object' ? errObj.error as Record<string, unknown> : undefined;
+                const nestedMsg = (nestedError?.message as string) || (errObj?.message as string);
+                const topMsg = (err as { message?: string }).message;
+                msg = nestedMsg || topMsg || msg;
+              }
+              toast.error(msg);
+            }
+          }}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name</Label>
-                <Input id="firstName" defaultValue="John" />
+                <Input id="firstName" value={form.first_name} onChange={e => setForm(f => ({...f, first_name: e.target.value}))} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">Last Name</Label>
-                <Input id="lastName" defaultValue="Doe" />
+                <Input id="lastName" value={form.last_name} onChange={e => setForm(f => ({...f, last_name: e.target.value}))} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
                 <Input
                   id="email"
                   type="email"
-                  defaultValue="john.doe@example.com"
-                  placeholder="john.doe@example.com"
+                  value={form.email}
+                  onChange={e => setForm(f => ({...f, email: e.target.value.toLowerCase()}))}
+                  placeholder="you@example.com"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="organization">Organization</Label>
-                <Input id="organization" defaultValue="Gorth Inc." />
+                <Label htmlFor="username">Username</Label>
+                <Input id="username" value={form.username} onChange={e => setForm(f => ({...f, username: e.target.value}))} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber">Phone Number</Label>
+                <Label htmlFor="phoneNumber">Phone Number (+84)</Label>
                 <div className="flex">
-                  <Select defaultValue="us">
-                    <SelectTrigger className="w-[120px] rounded-r-none border-r-0">
-                      <SelectValue placeholder="Code" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="us">US (+1)</SelectItem>
-                      <SelectItem value="uk">UK (+44)</SelectItem>
-                      <SelectItem value="ca">CA (+1)</SelectItem>
-                      <SelectItem value="au">AU (+61)</SelectItem>
-                      <SelectItem value="de">DE (+49)</SelectItem>
-                      <SelectItem value="fr">FR (+33)</SelectItem>
-                      <SelectItem value="jp">JP (+81)</SelectItem>
-                      <SelectItem value="cn">CN (+86)</SelectItem>
-                      <SelectItem value="in">IN (+91)</SelectItem>
-                      <SelectItem value="br">BR (+55)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="w-[120px] flex items-center justify-center border rounded-l-md bg-muted text-sm font-medium">+84</div>
                   <Input
                     id="phoneNumber"
                     className="rounded-l-none"
-                    placeholder="202 555 0111"
+                    placeholder="Ví dụ: 0912345678"
+                    value={form.phone_number}
+                    onChange={e => setForm(f => ({...f, phone_number: e.target.value }))}
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Input id="address" placeholder="Address" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="state">State</Label>
-                <Input id="state" placeholder="California" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="zipCode">Zip Code</Label>
-                <Input id="zipCode" placeholder="231465" maxLength={6} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="country">Country</Label>
-                <Select>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select country" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="us">United States</SelectItem>
-                    <SelectItem value="uk">United Kingdom</SelectItem>
-                    <SelectItem value="ca">Canada</SelectItem>
-                    <SelectItem value="au">Australia</SelectItem>
-                    <SelectItem value="de">Germany</SelectItem>
-                    <SelectItem value="fr">France</SelectItem>
-                    <SelectItem value="jp">Japan</SelectItem>
-                    <SelectItem value="cn">China</SelectItem>
-                    <SelectItem value="in">India</SelectItem>
-                    <SelectItem value="br">Brazil</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="language">Language</Label>
-                <Select>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select language" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="fr">French</SelectItem>
-                    <SelectItem value="de">German</SelectItem>
-                    <SelectItem value="pt">Portuguese</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="timezone">Timezone</Label>
-                <Select>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select timezone" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="-12">(GMT-12:00) International Date Line West</SelectItem>
-                    <SelectItem value="-8">(GMT-08:00) Pacific Time (US & Canada)</SelectItem>
-                    <SelectItem value="-7">(GMT-07:00) Mountain Time (US & Canada)</SelectItem>
-                    <SelectItem value="-6">(GMT-06:00) Central Time (US & Canada)</SelectItem>
-                    <SelectItem value="-5">(GMT-05:00) Eastern Time (US & Canada)</SelectItem>
-                    <SelectItem value="-4">(GMT-04:00) Atlantic Time (Canada)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="currency">Currency</Label>
-                <Select>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select currency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="usd">USD</SelectItem>
-                    <SelectItem value="eur">Euro</SelectItem>
-                    <SelectItem value="gbp">Pound</SelectItem>
-                    <SelectItem value="btc">Bitcoin</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="bio">Bio</Label>
+                <textarea id="bio" className="w-full border rounded-md p-2 text-sm min-h-24"
+                  value={form.bio}
+                  onChange={e => setForm(f => ({...f, bio: e.target.value}))}
+                  placeholder="Giới thiệu ngắn..."
+                />
               </div>
             </div>
             <div className="flex gap-3">
               <Button 
                 type="submit"
                 className="cursor-pointer"
+                disabled={saving}
               >
-                Save changes
+                {saving ? 'Saving...' : 'Save changes'}
               </Button>
               <Button 
                 type="reset" 
@@ -248,9 +258,14 @@ export default function InformationPage() {
               Once you delete your account, there is no going back. Please be certain.
             </AlertDescription>
           </Alert>
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={e => {
+            e.preventDefault();
+            if (!confirmDeactivate) return; // guard
+            // TODO: call delete / deactivate endpoint when implemented
+            toast.info('Deactivation endpoint chưa được triển khai');
+          }}>
             <div className="flex items-center space-x-2">
-              <Checkbox id="accountActivation" />
+              <Checkbox id="accountActivation" checked={confirmDeactivate} onCheckedChange={(v) => setConfirmDeactivate(!!v)} />
               <Label
                 htmlFor="accountActivation"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -261,8 +276,8 @@ export default function InformationPage() {
             <Button 
               type="submit" 
               variant="destructive" 
-              disabled
-              className="w-full sm:w-auto not-disabled:cursor-pointer"
+              disabled={!confirmDeactivate}
+              className="w-full sm:w-auto not-disabled:cursor-pointer transition-opacity"
             >
               Deactivate Account
             </Button>

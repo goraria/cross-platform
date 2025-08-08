@@ -1,9 +1,10 @@
-// Import shared schemas
-export * from "@shared/schemas/auth.schemas";
-export * from "@shared/schemas/business.schemas";
+// Central export point for constants-level schemas.
+// Re-export local app schemas (use relative path to avoid early path resolution issues)
+export * from "../schemas";
 
-// Client-specific schemas can be added here if needed
-import { z } from "zod";
+// Optionally re-export shared workspace schemas (uncomment when available)
+// export * from "@shared/schemas/auth.schemas";
+// export * from "@shared/schemas/business.schemas";
 
 // import * as z from "zod";
 // import { PropertyTypeEnum } from "@/lib/constants";
