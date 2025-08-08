@@ -1,129 +1,167 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { BaseQueryApi, FetchArgs } from "@reduxjs/toolkit/query";
+import { BaseQueryFn, FetchArgs, FetchBaseQueryError, QueryReturnValue, FetchBaseQueryMeta } from "@reduxjs/toolkit/query";
 // import { User, Course, Transaction, UserCourseProgress, SectionProgress } from "@clerk/nextjs/server";
 // import { Clerk } from "@clerk/clerk-js";
 import { toast } from "sonner";
 import { User } from "./types";
-import { RegisterInput } from "@/constants/schemas";
-const customBaseQuery = async (
-  args: string | FetchArgs,
-  api: BaseQueryApi,
-  extraOptions: any
-) => {
-  const baseQuery = fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
-    credentials: "include",
-    prepareHeaders: async (headers) => {
-      // const token = await window.Clerk?.session?.getToken();
-      // if (token) {
-      //   headers.set("Authorization", `Bearer ${token}`);
-      // }
-      return headers;
-    },
-  });
+import { RegisterInput, UpdateProfileInput } from "@schemas/authSchemas";
+/* ----------------------------------------
+   CSRF SUPPORT + TOAST HANDLING
+----------------------------------------- */
 
-  try {
-    const result = await baseQuery(args, api, extraOptions);
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
-    // 1) Nếu fetchBaseQuery trả lỗi
-    if (result.error) {
-      const msg =
-        (result.error.data as any)?.message ||
-        result.error.status?.toString() ||
-        'Unknown error';
-      toast.error(`Error: ${msg}`);
+interface CsrfCache { token: string; at: number }
+let csrfCache: CsrfCache | null = null;
+const CSRF_TTL = 30 * 60 * 1000; // 30 phút
 
-      return {
-        error: {
-          status: result.error.status ?? 'FETCH_ERROR',
-          error: msg,
-        },
-      };
-    }
-
-    // 2) Nếu fetchBaseQuery trả data
-    if (result.data !== undefined) {
-      // unwrap payload { data, message? }
-      const raw = result.data as { data: any; message?: string };
-
-      // nếu đây là mutation và có thông báo thành công
-      const method =
-        typeof (args as FetchArgs).method === 'string'
-          ? (args as FetchArgs).method!.toUpperCase()
-          : 'GET';
-      if (method !== 'GET' && raw.message) {
-        toast.success(raw.message);
+// Refresh token coordination (avoid multiple parallel refresh calls)
+let refreshPromise: Promise<boolean> | null = null;
+async function attemptRefresh(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/auth/refresh-token`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'x-csrf-token': await fetchCsrf().catch(()=> '') }
+        });
+        if (!res.ok) return false;
+        const body = await res.json();
+        return !!body?.success;
+      } catch {
+        return false;
+      } finally {
+        // allow next refresh attempt after settle
+        setTimeout(() => { refreshPromise = null; }, 0);
       }
-
-      return { data: raw.data };
-    }
-
-    // 3) Trường hợp không error, không data (ví dụ 204 No Content)
-    return { data: null };
-  } catch (e: any) {
-    // 4) Nếu throw exception
-    const msg = e?.message ?? 'Unknown exception';
-    toast.error(`Error: ${msg}`);
-    return {
-      error: {
-        status: 'FETCH_ERROR',
-        error: msg,
-      },
-    };
+    })();
   }
+  return refreshPromise;
+}
 
-  // try {
-  //   const result: any = await baseQuery(args, api, extraOptions);
-  //
-  //   if (result.error) {
-  //     const errorData = result.error.data;
-  //     const errorMessage =
-  //       errorData?.message ||
-  //       result.error.status.toString() ||
-  //       "An error occurred";
-  //     toast.error(`Error: ${errorMessage}`);
-  //   }
-  //
-  //   const isMutationRequest =
-  //     (args as FetchArgs).method && (args as FetchArgs).method !== "GET";
-  //
-  //   if (isMutationRequest) {
-  //     const successMessage = result.data?.message;
-  //     if (successMessage) toast.success(successMessage);
-  //   }
-  //
-  //   if (result.data) {
-  //     result.data = result.data.data;
-  //   } else if (
-  //     result.error?.status === 204 ||
-  //     result.meta?.response?.status === 24
-  //   ) {
-  //     return { data: null };
-  //   }
-  //
-  //   return result;
-  // } catch (error: unknown) {
-  //   const errorMessage =
-  //     error instanceof Error ? error.message : "Unknown error";
-  //
-  //   return { error: { status: "FETCH_ERROR", error: errorMessage } };
-  // }
+async function fetchCsrf(): Promise<string> {
+  if (csrfCache && Date.now() - csrfCache.at < CSRF_TTL) return csrfCache.token;
+  const res = await fetch(`${BASE_URL}/csrf-token`, { credentials: 'include' });
+  if (!res.ok) throw new Error('Không lấy được CSRF token');
+  const data = await res.json();
+  csrfCache = { token: data.csrfToken, at: Date.now() };
+  return data.csrfToken;
+}
+
+function invalidateCsrf() { csrfCache = null; }
+
+const isMutationMethod = (m?: string) => !!m && ['POST','PUT','PATCH','DELETE'].includes(m.toUpperCase());
+
+const rawBaseQuery = fetchBaseQuery({
+  baseUrl: BASE_URL,
+  credentials: 'include',
+  prepareHeaders: (headers) => headers,
+});
+
+const baseQueryWithCsrf: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError, object, FetchBaseQueryMeta> = async (args, api, extra) => {
+  const req: FetchArgs = typeof args === 'string' ? { url: args } : { ...args };
+  const method = (req.method || 'GET').toUpperCase();
+  if (isMutationMethod(method)) {
+    try {
+      const token = await fetchCsrf();
+  const currentHeaders = (req.headers || {}) as Record<string, string>;
+  req.headers = { ...currentHeaders, 'x-csrf-token': token };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'CSRF error';
+  toast.error(`CSRF lỗi: ${msg}`);
+  return { error: { status: 'CUSTOM_ERROR', data: { message: msg } } } as QueryReturnValue<unknown, FetchBaseQueryError, FetchBaseQueryMeta>;
+    }
+  }
+  let result = await rawBaseQuery(req, api, extra);
+  if (result.error?.status === 403) {
+    const dataObj = result.error.data as { code?: string } | undefined;
+    if (dataObj?.code === 'CSRF_INVALID') {
+      invalidateCsrf();
+      if (isMutationMethod(method)) {
+        try {
+          const token = await fetchCsrf();
+          const currentHeaders2 = (req.headers || {}) as Record<string, string>;
+          req.headers = { ...currentHeaders2, 'x-csrf-token': token };
+        } catch {
+          toast.error('Làm mới CSRF thất bại');
+          return result;
+        }
+      }
+      result = await rawBaseQuery(req, api, extra);
+    }
+  }
+  // Handle expired access token -> attempt silent refresh once then retry
+  if (result.error?.status === 401) {
+    const errUnknown = result.error.data as unknown;
+    let code: string | undefined;
+    if (errUnknown && typeof errUnknown === 'object') {
+      const maybeObj = errUnknown as { error?: { code?: string }; code?: string };
+      code = maybeObj.error?.code || maybeObj.code;
+    }
+    if (code === 'TOKEN_EXPIRED') {
+      const refreshed = await attemptRefresh();
+      if (refreshed) {
+        // Reattach CSRF header for retry if mutation
+        if (isMutationMethod(method)) {
+          try {
+            const token = await fetchCsrf();
+            const currentHeaders3 = (req.headers || {}) as Record<string, string>;
+            req.headers = { ...currentHeaders3, 'x-csrf-token': token };
+          } catch {/* ignore */}
+        }
+        const retry = await rawBaseQuery(req, api, extra);
+        if (!retry.error) {
+          const rawRetry = retry.data as unknown;
+          if (rawRetry && typeof rawRetry === 'object' && 'data' in (rawRetry as Record<string, unknown>)) {
+            const obj = rawRetry as { data?: unknown; message?: string };
+            if (method !== 'GET' && obj.message) toast.success(obj.message);
+            return { data: obj.data } as QueryReturnValue<unknown, FetchBaseQueryError, FetchBaseQueryMeta>;
+          }
+          return retry as QueryReturnValue<unknown, FetchBaseQueryError, FetchBaseQueryMeta>;
+        }
+        // fall through to normal error handling if retry still fails
+        result = retry;
+      }
+    }
+  }
+  if (result.error) {
+  const d = result.error.data as { message?: string; error?: string } | undefined;
+  const msg = d?.message || d?.error || result.error.status?.toString() || 'Unknown error';
+    toast.error(msg);
+    return result;
+  }
+  const raw = result.data as unknown;
+  // Special handling: auto refresh once if /auth/me says unauthenticated (access expired) but refresh cookie may still be valid
+  if (!result.error && req.url === '/auth/me' && raw && typeof raw === 'object') {
+    const r = raw as { authenticated?: unknown; data?: unknown };
+    const unauth = r.authenticated === false && r.data === null;
+    if (unauth) {
+    // attempt silent refresh then retry once
+      const refreshed = await attemptRefresh();
+      if (refreshed) {
+        const retry = await rawBaseQuery(req, api, extra);
+        if (!retry.error) return retry as QueryReturnValue<unknown, FetchBaseQueryError, FetchBaseQueryMeta>;
+      }
+    }
+  }
+  if (raw && typeof raw === 'object') {
+    const record = raw as Record<string, unknown>;
+    if ('data' in record) {
+      // Chỉ unwrap đối với mutation (POST/PUT/PATCH/DELETE) để giữ nguyên envelope GET như /auth/me
+      if (method !== 'GET') {
+        const obj = raw as { data?: unknown; message?: string };
+        if (obj.message) toast.success(obj.message);
+        return { data: obj.data };
+      }
+    }
+  }
+  return result as QueryReturnValue<unknown, FetchBaseQueryError, FetchBaseQueryMeta>;
 };
 
+
 export const api = createApi({
-  // baseQuery: customBaseQuery,
-  baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
-    credentials: 'include',
-    prepareHeaders: async (headers) => {
-      // const session = await fetchAuthSession();
-      // const { idToken } = session.tokens ?? {};
-      // if (idToken) {
-      //   headers.set("Authorization", `Bearer ${idToken}`);
-      // }
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWithCsrf,
   reducerPath: "api",
   tagTypes: ["Courses", "Users", "UserCourseProgress"],
   endpoints: (builder) => ({
@@ -153,16 +191,39 @@ export const api = createApi({
         method: 'POST',
       }),
     }),
-    getMe: builder.query<User, void>({
+    updateProfile: builder.mutation<
+      { id: string; email: string; username: string; first_name: string; last_name: string; full_name: string; phone_number?: string|null; phone_code?: string|null; avatar_url?: string|null; cover_url?: string|null; bio?: string|null },
+      Partial<UpdateProfileInput>
+    >({
+      query: (body) => ({
+        url: '/users/me',
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: ['Users']
+    }),
+    getMe: builder.query<{ success: boolean; authenticated: boolean; data: User | null }, void>({
       query: () => ({
         url: '/auth/me',
         method: 'GET',
       }),
     }),
+  // removed duplicate updateProfile pointing to /auth/profile
 
     getUsers: builder.query<User[], { category?: string }>({
       query: () => "/manage/users",
       providesTags: ["Users"],
+    }),
+
+    // Generic access check (role + auth) for a frontend path
+    checkAccess: builder.query<{
+      success: boolean; path: string; allowed: boolean; public?: boolean; authenticated?: boolean; requiredRoles?: string[]; userRole?: string; reason?: string;
+    }, string>({
+      query: (path) => ({
+        url: `/auth/check-access`,
+        method: 'GET',
+        params: { path },
+      }),
     }),
 
     // getUsers: build.query<User[], { category?: string }>({
@@ -206,7 +267,7 @@ export const api = createApi({
     //   query: ({ courseId, formData }) => ({
     //     url: `courses/${courseId}`,
     //     method: "PUT",
-    //     body: formData,
+  // baseQuery removed (already defined at root createApi)
     //   }),
     //   invalidatesTags: (result, error, { courseId }) => [
     //     { type: "Courses", id: courseId },
@@ -332,6 +393,8 @@ export const {
   useLogoutMutation,
   useGetUsersQuery,
   useGetMeQuery,
+  useCheckAccessQuery,
+  useUpdateProfileMutation,
   // useUpdateUserMutation,
   // useCreateCourseMutation,
   // useUpdateCourseMutation,

@@ -11,44 +11,66 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { BoxIcon } from "@/components/elements/box-icon";
-import { loginSchema } from "@/constants/schemas";
+import { loginSchema } from "@/schemas/authSchemas";
+import type { SubmitHandler } from "react-hook-form";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useLoginMutation, useGetMeQuery } from "@/state/api";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import DirectingPage from "@/app/(misc)/directing/page";
+import LoadingPage from "@/app/(misc)/loading/page";
 
 export default function SignInPage() {
-  const [layout] = useState(1); // bỏ setLayout vì không dùng
+  const [layout] = useState(1); // layout selector (1 active)
   const [login, { isLoading }] = useLoginMutation();
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  interface LoginFormShape { identifier: string; password: string; remember_me?: boolean }
+  const { register: formRegister, handleSubmit, setValue, watch, formState: { errors } } = useForm<LoginFormShape>({
     resolver: zodResolver(loginSchema),
+    mode: 'onChange',
+  defaultValues: { identifier: '', password: '', remember_me: false }
   });
   const router = useRouter();
   // Gọi API lấy user hiện tại (dựa vào cookie)
-  const { data: user, isLoading: isUserLoading } = useGetMeQuery();
+  const { data: meResp, isLoading: isUserLoading } = useGetMeQuery();
   // console.log(user, isUserLoading);
 
   useEffect(() => {
-    if (!isUserLoading && user) {
-      router.replace("/"); // Nếu đã đăng nhập thì chuyển hướng về home
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[SignIn] effect', { isUserLoading, meResp });
     }
-  }, [user, isUserLoading, router]);
+    if (!isUserLoading && meResp?.authenticated && meResp.data) router.replace("/profile");
+  }, [meResp, isUserLoading, router]);
 
   // Xử lý submit dùng react-hook-form, đồng bộ validate zod, toast lỗi rõ ràng
-  const onSubmit = async (data: { email: string; password: string }) => {
+  const onSubmit: SubmitHandler<LoginFormShape> = async (data: LoginFormShape) => {
     try {
-      await login(data).unwrap();
+  await login(data).unwrap();
       toast.success("Login successful");
       router.replace("/");
-    } catch (err) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const error: any = err;
-      toast.error(error?.data?.error || error?.data?.message || "Login failed");
+    } catch (err: unknown) {
+      let message = "Login failed";
+      if (typeof err === 'object' && err) {
+        const e = err as { data?: { error?: string; message?: string }; message?: string };
+        message = e.data?.error || e.data?.message || e.message || message;
+      }
+      toast.error(message);
     }
   };
 
   // Nếu đang loading user thì có thể return null hoặc spinner
-  if (isUserLoading) return null;
+  if (isUserLoading) {
+    return (
+      <LoadingPage />
+    );
+  }
+
+  // Đã xác thực -> hiển thị màn chờ thay vì form (tránh flash UI) trong lúc useEffect redirect
+  if (!isUserLoading && meResp?.authenticated && meResp.data) {
+    return (
+      <DirectingPage />
+    );
+  }
 
   return (
     <>
@@ -86,16 +108,16 @@ export default function SignInPage() {
               </span>
             </div>
             <div className="grid gap-3">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="identifier">Email hoặc Username</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
+                id="identifier"
+                type="text"
+                placeholder="user@example.com hoặc username"
                 required
-                {...register("email")}
+                {...formRegister("identifier")}
               />
-              {errors.email && (
-                <span className="text-red-500 text-xs">{errors.email.message as string}</span>
+              {errors.identifier && (
+                <span className="text-red-500 text-xs">{errors.identifier.message as string}</span>
               )}
             </div>
             <div className="grid gap-3">
@@ -113,11 +135,19 @@ export default function SignInPage() {
                 type="password"
                 placeholder="********"
                 required
-                {...register("password")}
+                {...formRegister("password")}
               />
               {errors.password && (
                 <span className="text-red-500 text-xs">{errors.password.message as string}</span>
               )}
+              <div className="flex items-center space-x-2 pt-1">
+                <Checkbox
+                  id="remember_me"
+                  checked={watch('remember_me')}
+                  onCheckedChange={(v) => setValue('remember_me', Boolean(v))}
+                />
+                <Label htmlFor="remember_me" className="text-xs">Remember me</Label>
+              </div>
             </div>
             <div className="flex flex-col gap-3">
               <Button type="submit" className="w-full" disabled={isLoading}>
@@ -401,10 +431,12 @@ export default function SignInPage() {
                   </div>
                 </form>
                 <div className="bg-muted relative hidden md:block">
-                  <img
+                  <Image
                     src="/backgrounds/placeholder.svg"
-                    alt="Image"
-                    className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+                    alt="Auth Illustration"
+                    fill
+                    className="object-cover dark:brightness-[0.2] dark:grayscale"
+                    priority
                   />
                 </div>
               </CardContent>

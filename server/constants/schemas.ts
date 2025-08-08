@@ -1,5 +1,5 @@
 // Import shared schemas
-export * from "../../shared";
+export * from "./schemas";
 
 // Server-specific schemas can be added here if needed
 import { z } from "zod";

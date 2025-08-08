@@ -586,12 +586,16 @@ model users {
   phone_number      String?   @db.VarChar(20)
   avatar_url        String?   @db.VarChar(255)
   cover_url         String?   @db.VarChar(255)
+  // Verification & MFA
+  email_verified_at  DateTime? @db.Timestamptz(6)
+  phone_verified_at  DateTime? @db.Timestamptz(6)
+  mfa_enabled        Boolean   @default(false)
+  mfa_secret         String?   @db.VarChar(64)
   bio               String?   @db.Text
   status            user_status_enum @default(active)
   role              user_role_enum   @default(user)
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
-
   // --- RELATIONS ---
   addresses                        addresses[]
   affiliate_stats                  affiliate_stats[]
@@ -624,6 +628,40 @@ model users {
   organizations_owned              organizations[]            @relation("organizations_owner_idTousers")
   restaurants_managed              restaurants[]              @relation("restaurants_manager_idTousers")
   restaurant_staffs                restaurant_staffs[]
+  verification_tokens              verification_tokens[]
+  verification_email_logs          verification_email_logs[]
+}
+
+/// Verification tokens for email / phone / MFA challenges
+model verification_tokens {
+  id          String   @id @default(uuid()) @db.Uuid
+  user_id     String   @db.Uuid
+  token_hash  String   @db.Text
+  type        verification_token_type_enum
+  context     String?  @db.VarChar(50)
+  expires_at  DateTime @db.Timestamptz(6)
+  consumed_at DateTime? @db.Timestamptz(6)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  users       users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id], map: "idx_verification_tokens_user")
+  @@index([type], map: "idx_verification_tokens_type")
+}
+
+/// Log each email verification send attempt
+model verification_email_logs {
+  id          String   @id @default(uuid()) @db.Uuid
+  user_id     String?  @db.Uuid
+  email       String   @db.VarChar(255)
+  ip_address  String?  @db.VarChar(45)
+  user_agent  String?  @db.VarChar(255)
+  status      String   @db.VarChar(30) // sent | cooldown | rate_limited | error
+  note        String?  @db.Text
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  users       users?   @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([email], map: "idx_verif_email_logs_email")
+  @@index([created_at], map: "idx_verif_email_logs_created")
 }
 
 /// Nguyên vật liệu/kho của nhà hàng
@@ -760,10 +798,19 @@ model sessions {
   created_at  DateTime @default(now()) @db.Timestamptz(6)
   updated_at  DateTime @default(now()) @db.Timestamptz(6)
   token       String?   @db.Text
+  // --- Security / rotation metadata ---
+  refresh_token_hash     String?   @db.Text
+  revoked_at             DateTime? @db.Timestamptz(6)
+  replaced_by_session_id String?   @db.Uuid
+  // --- Device / context metadata ---
+  ip_address             String?   @db.VarChar(45)
+  user_agent             String?   @db.VarChar(255)
+  last_accessed_at       DateTime? @db.Timestamptz(6)
   users       users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id], map: "idx_sessions_user")
   @@index([expires_at], map: "idx_sessions_expires")
+  @@index([user_id, is_valid], map: "idx_sessions_user_valid")
 }
 
 /// --- ENUMS (snake_case) ---
@@ -809,6 +856,13 @@ enum task_priority_enum {
   low
   medium
   high
+}
+
+enum verification_token_type_enum {
+  email_verification
+  phone_verification
+  mfa_challenge
+  password_reset
 }
 
 enum task_status_enum {

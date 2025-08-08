@@ -23,11 +23,13 @@
 #/website/.vscode
 #/default/.vscode
 
+mobile/~
+
 .env*
 **/.env
 **/.env*
 client/.env.local
-client/.env.development 
+client/.env.development
 client/.env.production
 website/.env.local
 website/.env.development
@@ -48,6 +50,7 @@ server/.env
 **/expo-env.d.ts
 /client/next-env.d.ts
 /default/next-env.d.ts
+/server/next-env.d.ts
 **/next-env.d.ts
 *.tsbuildinfo
 

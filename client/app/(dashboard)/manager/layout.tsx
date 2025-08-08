@@ -1,6 +1,6 @@
 "use client"
 
-import React, { ReactNode } from "react"
+import React, { ReactNode, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AppSidebar } from "@/app/(dashboard)/manager/components/app-sidebar"
@@ -20,9 +20,25 @@ import {
 } from "@/components/ui/sidebar"
 import { ModeToggle } from "@/components/elements/mode-toggle"
 import { appGlobal, managerSidebar } from "@/constants/constants";
+import { useCheckAccessQuery } from "@/state/api";
+import { useRouter } from "next/navigation";
 
 export default function DashboardLayout({ children }: { children: ReactNode } ) {
   const pathname = usePathname()
+  const router = useRouter();
+  const { data: access, isLoading: accessLoading } = useCheckAccessQuery('/manager');
+
+  useEffect(() => {
+    if (!accessLoading && access && !access.allowed) {
+      // Nếu chưa đăng nhập -> chuyển sign-in, nếu thiếu role -> forbidden
+      if (access.reason === 'UNAUTHENTICATED') router.replace('/sign-in');
+      else router.replace('/'); // hoặc '/forbidden'
+    }
+  }, [accessLoading, access, router]);
+
+  if (accessLoading || (access && !access.allowed)) {
+    return <div className="p-6 text-sm text-muted-foreground">Checking access...</div>;
+  }
   
   // Tạo breadcrumb items từ URL
   const createBreadcrumbs = () => {

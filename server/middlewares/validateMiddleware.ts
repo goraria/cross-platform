@@ -1,9 +1,9 @@
 // src/middleware/validateRequest.ts
 import { Request, Response, NextFunction } from "express";
-import { AnyZodObject, ZodError } from "zod";
+import { ZodTypeAny } from "zod";
 
 export const validateMiddleware = (
-  schema: AnyZodObject
+  schema: ZodTypeAny
 ) => (
   req: Request,
   res: Response,
@@ -22,7 +22,7 @@ export const validateMiddleware = (
 };
 
 export const validateSafely = (
-  schema: AnyZodObject
+  schema: ZodTypeAny
 ) => (
   req: Request,
   res: Response,
@@ -41,7 +41,7 @@ export const validateSafely = (
 };
 
 export const validateUnsafely = (
-  schema: AnyZodObject
+  schema: ZodTypeAny
 ) => async (
   req: Request,
   res: Response,
