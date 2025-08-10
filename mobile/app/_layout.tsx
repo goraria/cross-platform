@@ -21,82 +21,82 @@ import { ThemeToggle } from "@/components/element/ThemeToggle";
 SplashScreen.preventAutoHideAsync();
 
 const LIGHT_THEME: Theme = {
-    ...DefaultTheme,
-    colors: NAV_THEME.light,
+	...DefaultTheme,
+	colors: NAV_THEME.light,
 };
 const DARK_THEME: Theme = {
-    ...DarkTheme,
-    colors: NAV_THEME.dark,
+	...DarkTheme,
+	colors: NAV_THEME.dark,
 };
 
 export default function RootLayout() {
-    // const colorScheme = useColorScheme();
-    // const [loaded] = useFonts({
-    //     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-    // });
+	// const colorScheme = useColorScheme();
+	// const [loaded] = useFonts({
+	//     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+	// });
 
-    const hasMounted = useRef(false);
-    const { colorScheme, isDarkColorScheme } = useColorScheme();
-    const [isColorSchemeLoaded, setIsColorSchemeLoaded] = useState(false);
+	const hasMounted = useRef(false);
+	const { colorScheme, isDarkColorScheme } = useColorScheme();
+	const [isColorSchemeLoaded, setIsColorSchemeLoaded] = useState(false);
 
-    useIsomorphicLayoutEffect(() => {
-        if (hasMounted.current) {
-            return;
-        }
+	useIsomorphicLayoutEffect(() => {
+		if (hasMounted.current) {
+			return;
+		}
 
-        if (Platform.OS === 'web') {
-            // Adds the background color to the html element to prevent white background on overscroll.
-            document.documentElement.classList.add('bg-background');
-        }
-        setAndroidNavigationBar(colorScheme);
-        setIsColorSchemeLoaded(true);
-        hasMounted.current = true;
-    }, []);
+		if (Platform.OS === 'web') {
+			// Adds the background color to the html element to prevent white background on overscroll.
+			document.documentElement.classList.add('bg-background');
+		}
+		setAndroidNavigationBar(colorScheme);
+		setIsColorSchemeLoaded(true);
+		hasMounted.current = true;
+	}, []);
 
-    if (!isColorSchemeLoaded) {
-        return null;
-    }
+	if (!isColorSchemeLoaded) {
+		return null;
+	}
 
-    return (
-        <>
-            {/*<ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>*/}
-            <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-                <StatusBar style={isDarkColorScheme ? 'light' : 'dark'}/>
-                {/*<StatusBar style="auto"/>*/}
-                <Stack>
-                    <Stack.Screen name="(tabs)" options={{
-                        headerShown: false,
-                        headerRight: () => <ThemeToggle/>,
-                    }}/>
-                    <Stack.Screen name="(auth)" options={{
-                        headerShown: false,
-                        headerRight: () => <ThemeToggle/>,
-                    }}/>
-                    <Stack.Screen name="(e-commerce)" options={{
-                        headerShown: false,
-                        headerRight: () => <ThemeToggle/>,
-                    }}/>
-                    <Stack.Screen name="(social-media)" options={{
-                        headerShown: false,
-                        headerRight: () => <ThemeToggle/>,
-                    }}/>
-                    <Stack.Screen name="(payment)" options={{
-                        headerShown: false,
-                        headerRight: () => <ThemeToggle/>,
-                    }}/>
-                    <Stack.Screen name="(setting)" options={{
-                        headerShown: false,
-                        headerRight: () => <ThemeToggle/>,
-                    }}/>
-                    <Stack.Screen name="+not-found"/>
-                </Stack>
-                <PortalHost/>
-            </ThemeProvider>
-        </>
-    );
+	return (
+		<>
+			{/*<ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>*/}
+			<ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
+				<StatusBar style={isDarkColorScheme ? 'light' : 'dark'} />
+				{/*<StatusBar style="auto"/>*/}
+				<Stack>
+					<Stack.Screen name="(tabs)" options={{
+						headerShown: false,
+						headerRight: () => <ThemeToggle />,
+					}} />
+					<Stack.Screen name="(auth)" options={{
+						headerShown: false,
+						headerRight: () => <ThemeToggle />,
+					}} />
+					<Stack.Screen name="(e-commerce)" options={{
+						headerShown: false,
+						headerRight: () => <ThemeToggle />,
+					}} />
+					<Stack.Screen name="(social-media)" options={{
+						headerShown: false,
+						headerRight: () => <ThemeToggle />,
+					}} />
+					<Stack.Screen name="(payment)" options={{
+						headerShown: false,
+						headerRight: () => <ThemeToggle />,
+					}} />
+					<Stack.Screen name="(setting)" options={{
+						headerShown: false,
+						headerRight: () => <ThemeToggle />,
+					}} />
+					<Stack.Screen name="+not-found" />
+				</Stack>
+				<PortalHost />
+			</ThemeProvider>
+		</>
+	);
 }
 
 const useIsomorphicLayoutEffect =
-    Platform.OS === 'web' && typeof window === 'undefined' ? useEffect : useLayoutEffect;
+	Platform.OS === 'web' && typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 
