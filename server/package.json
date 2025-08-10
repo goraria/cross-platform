@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@apollo/server": "^5.0.0",
-    "@clerk/express": "^1.7.16",
+    "@clerk/express": "^1.7.17",
     "@prisma/client": "^6.13.0",
     "axios": "^1.11.0",
     "bcryptjs": "^3.0.2",
@@ -57,7 +57,7 @@
     "sequelize": "^6.37.7",
     "socket.io": "^4.8.1",
     "uuid": "^11.1.0",
-    "zod": "^4.0.15"
+    "zod": "^4.0.17"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.9",
@@ -69,7 +69,7 @@
     "@types/module-alias": "^2.0.4",
     "@types/morgan": "^1.9.10",
     "@types/multer": "^2.0.0",
-    "@types/node": "^24.2.0",
+    "@types/node": "^24.2.1",
     "@types/nodemailer": "^6.4.17",
     "@types/pluralize": "^0.0.33",
     "@types/uuid": "^10.0.0",
