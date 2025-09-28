@@ -36,7 +36,7 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function ResponsiveCard({ children, rightPane }: { children: React.ReactNode; rightPane?: React.ReactNode }) {
+export default function ResponsiveCard({ children, rightPane }: { children: React.ReactNode; rightPane?: React.ReactNode }) {
   const { width } = useWindowDimensions();
   const isWide = width >= 768; // same breakpoint as md in web
 

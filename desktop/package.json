@@ -9,7 +9,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
-    "electron": "^37.2.6",
+    "electron": "^38.2.0",
     "typescript": "^5.9.2"
   }
 }
